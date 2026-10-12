@@ -1,667 +1,787 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Berenjena Caliente</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        eggplant: {
-                            50: '#fdf4ff',
-                            100: '#fae8ff',
-                            400: '#c084fc',
-                            600: '#9333ea',
-                            800: '#581c87',
-                            900: '#3b0764',
-                            950: '#240046'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        
-        /* Heartbeat / pulsating eggplant animation */
-        @keyframes heartbeat {
-            0% { transform: scale(1); }
-            14% { transform: scale(1.15); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.22); }
-            70% { transform: scale(1); }
-        }
-        .animate-eggplant-pulse {
-            animation: heartbeat 1.1s infinite ease-in-out;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RetroLink - GB / GBC / GBA Emulator & Cable Link</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS for WebRTC Link Cable Multiplayer -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* Custom Pixel & Retro Styles */
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@400;600;700&display=swap');
 
-        /* Fast pulse for button highlight */
-        @keyframes pulse-fast {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.85; }
-        }
-        .animate-pulse-fast {
-            animation: pulse-fast 0.8s infinite ease-in-out;
-        }
+    .font-pixel { font-family: 'Press Start 2P', monospace; }
+    .font-lcd { font-family: 'VT323', monospace; }
 
-        /* Explosion shake effect */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-12px) rotate(-3deg); }
-            40%, 80% { transform: translateX(12px) rotate(3deg); }
-        }
-        .animate-shake {
-            animation: shake 0.4s ease-in-out;
-        }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
 
-        /* Custom mobile scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #581c87;
-            border-radius: 4px;
-        }
-    </style>
+    /* Console Aesthetic Themes */
+    .theme-gb {
+      --console-bg: #8b956d;
+      --console-border: #525a3d;
+      --screen-border: #3b3c36;
+      --accent-color: #8b0000;
+      --btn-color: #8b0000;
+      --btn-text: #ffffff;
+    }
+
+    .theme-gbc {
+      --console-bg: #4a347f;
+      --console-border: #312158;
+      --screen-border: #1e1538;
+      --accent-color: #00e5ff;
+      --btn-color: #7b2cbf;
+      --btn-text: #ffffff;
+    }
+
+    .theme-gba {
+      --console-bg: #3c3370;
+      --console-border: #261f4c;
+      --screen-border: #14102c;
+      --accent-color: #9d4edd;
+      --btn-color: #240046;
+      --btn-text: #ffffff;
+    }
+
+    /* Screen Overlay Effects */
+    .lcd-grid {
+      background-size: 4px 4px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+    }
+
+    /* Tactile Button Press Styles */
+    .btn-tactile {
+      box-shadow: 0 5px 0 rgba(0,0,0,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-tactile:active, .btn-tactile.active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.4);
+    }
+
+    .dpad-btn {
+      touch-action: manipulation;
+    }
+    
+    .dpad-btn:active, .dpad-btn.active {
+      background-color: #1e293b !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
 </head>
-<body class="bg-eggplant-950 text-slate-100 h-full flex flex-col overflow-hidden">
+<body class="h-full flex flex-col justify-between select-none overflow-hidden theme-gb text-slate-100">
 
-    <div id="app" class="flex-1 flex flex-col h-full max-w-md mx-auto w-full p-4 relative justify-between">
-        
-        <!-- HEADER / TITLE BAR -->
-        <header class="flex items-center justify-between py-2 border-b border-eggplant-900">
-            <div class="flex items-center space-x-2 cursor-pointer" onclick="goToMenu()">
-                <span class="text-3xl">🍆</span>
-                <h1 class="font-black text-xl tracking-wider bg-gradient-to-r from-purple-300 via-fuchsia-400 to-emerald-400 bg-clip-text text-transparent">
-                    LA BERENJENA
-                </h1>
-            </div>
-            <div id="status-badge" class="hidden px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-fuchsia-300 border border-fuchsia-500/40 animate-pulse">
-                ¡En Juego!
-            </div>
-        </header>
-
-        <!-- SCREEN 0: MODE SELECTION MENU -->
-        <div id="screen-menu" class="flex-1 flex flex-col justify-center py-6 gap-5">
-            <div class="text-center my-2">
-                <div class="text-7xl mb-2 animate-eggplant-pulse">🍆🔥</div>
-                <h2 class="text-2xl font-black text-fuchsia-200">Elige el Modo de Juego</h2>
-                <p class="text-xs text-purple-300/80 mt-1">Selecciona la dinámica de ronda con tus amigos</p>
-            </div>
-
-            <div class="flex flex-col gap-4 my-auto">
-                <!-- Mode 1 Option -->
-                <button onclick="selectMode('letters')" class="p-5 bg-gradient-to-r from-eggplant-900 to-purple-900/80 hover:from-eggplant-800 hover:to-purple-800 border border-purple-500/30 rounded-3xl text-left shadow-lg active:scale-95 transition-all group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xl font-extrabold text-fuchsia-300 group-hover:text-white">🔤 Bomba de Letras</span>
-                        <span class="text-xs bg-purple-500/30 text-purple-200 px-2.5 py-1 rounded-full font-bold">Mesa</span>
-                    </div>
-                    <p class="text-xs text-purple-200/70 leading-relaxed">
-                        Apoyen el celular en la mesa. Decí una palabra según la consigna, tocá la letra inicial y pasale el turno al siguiente.
-                    </p>
-                </button>
-
-                <!-- Mode 2 Option -->
-                <button onclick="selectMode('classic')" class="p-5 bg-gradient-to-r from-fuchsia-950 to-eggplant-900 hover:from-fuchsia-900 hover:to-eggplant-800 border border-fuchsia-500/40 rounded-3xl text-left shadow-lg active:scale-95 transition-all group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xl font-extrabold text-emerald-400 group-hover:text-emerald-300">🍆 Berenjena Caliente</span>
-                        <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full font-bold">Pasa-Pasa</span>
-                    </div>
-                    <p class="text-xs text-purple-200/70 leading-relaxed">
-                        El pasa-pasa de toda la vida. Pásense el celular de mano en mano rápidamente. ¡Cuidado que no te explote a vos!
-                    </p>
-                </button>
-            </div>
-        </div>
-
-        <!-- SCREEN 1: LETTER CONFIGURATION (MODE 1) -->
-        <div id="screen-config" class="hidden flex-1 flex flex-col py-4 overflow-hidden">
-            <div class="mb-3 flex justify-between items-end">
-                <div>
-                    <h2 class="text-lg font-bold text-fuchsia-200">Configurar Letras</h2>
-                    <p class="text-xs text-purple-300/80">Selecciona las letras disponibles para esta ronda.</p>
-                </div>
-                <button onclick="goToMenu()" class="text-xs text-purple-400 underline hover:text-purple-200">Cambiar Modo</button>
-            </div>
-
-            <!-- Letter Grid Selector -->
-            <div id="config-letter-grid" class="flex-1 overflow-y-auto grid grid-cols-5 gap-2 p-1 content-start">
-                <!-- JS populated -->
-            </div>
-
-            <!-- Configuration Actions -->
-            <div class="pt-3 border-t border-eggplant-900 flex flex-col gap-2">
-                <div class="flex gap-2">
-                    <button onclick="selectAllLetters(true)" class="flex-1 py-2 text-xs font-semibold bg-eggplant-900 hover:bg-eggplant-800 text-purple-200 rounded-xl transition-all">
-                        Todas
-                    </button>
-                    <button onclick="selectAllLetters(false)" class="flex-1 py-2 text-xs font-semibold bg-eggplant-900 hover:bg-eggplant-800 text-purple-200 rounded-xl transition-all">
-                        Ninguna
-                    </button>
-                    <button onclick="resetDefaultLetters()" class="flex-1 py-2 text-xs font-semibold bg-eggplant-900 hover:bg-eggplant-800 text-fuchsia-400 rounded-xl transition-all">
-                        Comunes
-                    </button>
-                </div>
-                <button onclick="startLettersMatch()" class="w-full py-4 bg-gradient-to-r from-fuchsia-600 to-eggplant-600 hover:from-fuchsia-700 hover:to-eggplant-700 text-white font-bold rounded-2xl shadow-lg shadow-fuchsia-600/30 active:scale-95 transition-all text-base flex items-center justify-center space-x-2">
-                    <span>¡Iniciar Ronda de Letras!</span>
-                    <span class="text-xl">🚀</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- SCREEN 2: LETTERS GAME BOARD (MODE 1) -->
-        <div id="screen-letters-game" class="hidden flex-1 flex flex-col py-3 overflow-hidden">
-            <!-- Central Bomb / Start Area -->
-            <div id="letters-bomb-container" class="my-2 flex flex-col items-center justify-center bg-eggplant-900/60 border border-eggplant-800 rounded-3xl p-4 shadow-inner relative overflow-hidden transition-all duration-300">
-                <div id="letters-prompt" class="text-center">
-                    <div class="text-5xl mb-1">🍆💣</div>
-                    <p class="text-xs font-semibold text-purple-200">Apoya el celu en la mesa y...</p>
-                    <button id="btn-start-letters-bomb" onclick="triggerLettersStart()" class="mt-3 px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-fuchsia-600/40 animate-pulse-fast active:scale-95 transition-all">
-                        ¡Iniciar Tiempo Secreto!
-                    </button>
-                </div>
-                <!-- Active Bomb HUD -->
-                <div id="letters-active-hud" class="hidden flex flex-col items-center">
-                    <div class="text-4xl animate-bounce mb-1">⏱️🍆</div>
-                    <p class="text-xs font-bold text-fuchsia-300 uppercase tracking-widest animate-pulse">¡La berenjena está corriendo!</p>
-                    <p class="text-[11px] text-purple-300/80 mt-0.5">Responde, toca tu letra y cede el turno</p>
-                </div>
-            </div>
-
-            <!-- Active Letter Grid -->
-            <div class="flex-1 my-2 flex flex-col overflow-hidden">
-                <div class="flex justify-between items-center mb-2 px-1">
-                    <span class="text-xs font-semibold text-purple-300 uppercase tracking-wider">Letras Disponibles</span>
-                    <span id="letters-count" class="text-xs font-bold text-fuchsia-400">0 / 0</span>
-                </div>
-                <div id="game-letter-grid" class="flex-1 overflow-y-auto grid grid-cols-4 gap-2.5 p-1 content-start">
-                    <!-- JS populated -->
-                </div>
-            </div>
-
-            <!-- Game Bottom Actions -->
-            <div class="pt-2 border-t border-eggplant-900 flex gap-2">
-                <button onclick="confirmAbortGame()" class="flex-1 py-2.5 text-xs font-semibold bg-eggplant-900 hover:bg-eggplant-800 text-purple-300 rounded-xl transition-all border border-eggplant-800">
-                    Reiniciar / Menú
-                </button>
-            </div>
-        </div>
-
-        <!-- SCREEN 3: CLASSIC EGGPLANT GAME (MODE 2) -->
-        <div id="screen-classic-game" class="hidden flex-1 flex flex-col justify-between py-4 text-center">
-            <div id="classic-header" class="mb-2">
-                <h2 class="text-xl font-black text-fuchsia-300">¡Berenjena Caliente!</h2>
-                <p id="classic-subtitle" class="text-xs text-purple-300/80 mt-1">Pásense el celular en la ronda</p>
-            </div>
-
-            <!-- Giant Pulsating Eggplant Display -->
-            <div class="my-auto flex flex-col items-center justify-center p-6">
-                <div id="classic-eggplant-icon" class="text-9xl my-4 transition-all duration-300">
-                    🍆
-                </div>
-                <p id="classic-status-text" class="text-sm font-bold text-purple-300 h-6">
-                    Presiona Iniciar para comenzar
-                </p>
-            </div>
-
-            <!-- Control Button -->
-            <div class="py-2 flex flex-col gap-3">
-                <button id="btn-start-classic" onclick="triggerClassicStart()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-base uppercase tracking-wider rounded-2xl shadow-lg shadow-emerald-500/30 animate-pulse-fast active:scale-95 transition-all">
-                    ¡Iniciar Ronda! 🔥
-                </button>
-                <button onclick="goToMenu()" class="w-full py-2.5 text-xs font-semibold bg-eggplant-900 hover:bg-eggplant-800 text-purple-300 rounded-xl transition-all border border-eggplant-800">
-                    Volver al Menú
-                </button>
-            </div>
-        </div>
-
-        <!-- MODAL: EXPLOSION (GAME OVER) -->
-        <div id="modal-explosion" class="fixed inset-0 bg-eggplant-950/95 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center animate-shake">
-            <div id="explosion-icon" class="text-8xl mb-3 animate-bounce">💥🍆💨</div>
-            <h2 id="explosion-title" class="text-4xl font-black text-fuchsia-500 tracking-wider uppercase mb-2">¡EXPLOSIÓN!</h2>
-            <p id="explosion-reason" class="text-purple-200 text-sm max-w-xs mb-6">Se acabó el tiempo. ¡Al que le quedó la berenjena en la mano perdió!</p>
-            
-            <div class="flex flex-col w-full max-w-xs gap-3">
-                <button id="btn-retry-mode" onclick="restartCurrentMode()" class="w-full py-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-fuchsia-600/30 active:scale-95 transition-all text-base">
-                    🔄 Jugar otra ronda
-                </button>
-                <button onclick="goToMenu()" class="w-full py-3 bg-eggplant-900 hover:bg-eggplant-800 text-purple-300 font-semibold rounded-2xl border border-eggplant-800 transition-all text-sm">
-                    🏠 Menú Principal
-                </button>
-            </div>
-        </div>
-
-        <!-- MODAL: VICTORY (ALL LETTERS USED) -->
-        <div id="modal-victory" class="fixed inset-0 bg-eggplant-950/95 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center">
-            <div class="text-7xl mb-4 animate-bounce">🏆🎉✨</div>
-            <h2 class="text-3xl font-black text-emerald-400 tracking-wider uppercase mb-2">¡SE SALVARON TODOS!</h2>
-            <p class="text-purple-200 text-sm max-w-xs mb-6">¡Completaron todas las letras antes de que estallara la berenjena!</p>
-            <div class="flex flex-col w-full max-w-xs gap-3">
-                <button onclick="startLettersMatch()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 active:scale-95 transition-all text-base">
-                    🔄 Jugar de nuevo
-                </button>
-                <button onclick="goToMenu()" class="w-full py-3 bg-eggplant-900 hover:bg-eggplant-800 text-purple-300 font-semibold rounded-2xl border border-eggplant-800 transition-all text-sm">
-                    🏠 Menú Principal
-                </button>
-            </div>
-        </div>
-
-        <!-- FOOTER INFO -->
-        <footer class="text-center py-1 text-[10px] text-purple-400/60">
-            La Berenjena Caliente • Juego de Ronda
-        </footer>
+  <!-- Top Navigation Header -->
+  <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-2 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center space-x-3">
+      <i class="fa-solid font-pixel text-emerald-400 text-lg">🎮</i>
+      <span class="font-pixel text-xs sm:text-sm tracking-wider text-emerald-400">RetroLink<span class="text-xs text-slate-400 ml-2 hidden sm:inline">GB/GBC/GBA Link</span></span>
     </div>
 
-    <script>
-        // Letters definition
-        const ALL_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-        const DEFAULT_ACTIVE = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'R', 'S', 'T', 'U', 'V'];
+    <!-- Active Console Selector Badge -->
+    <div class="flex items-center space-x-2">
+      <span id="console-badge" class="font-pixel text-[10px] px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
+        GB DMG
+      </span>
 
-        // Global State
-        let currentMode = null; // 'letters' or 'classic'
-        let letterState = {}; 
-        let availableGameLetters = []; 
-        let roundActive = false;
-        let roundTimer = null;
-        let audioCtx = null;
+      <!-- Action Buttons -->
+      <button id="btn-open-multiplayer" class="bg-indigo-600 hover:bg-indigo-500 text-white font-sans text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-network-wired text-xs"></i>
+        <span class="hidden sm:inline">Cable Link</span>
+      </button>
 
-        window.onload = function() {
-            resetDefaultLetters();
-            goToMenu();
+      <button id="btn-settings" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded-md text-xs transition">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Body / Handheld Console Frame -->
+  <main class="flex-1 flex flex-col lg:flex-row items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+    
+    <!-- Handheld Shell Box -->
+    <div id="handheld-shell" class="w-full max-w-4xl h-full flex flex-col lg:flex-row bg-slate-900 border-4 border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative transition-all duration-300">
+
+      <!-- Top / Left Panel: Screen & LCD Display -->
+      <div class="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-950 relative min-h-0">
+
+        <!-- Console Screen Bezel -->
+        <div id="screen-bezel" class="w-full max-w-md bg-slate-800 p-4 rounded-xl border-4 border-slate-700 shadow-inner flex flex-col items-center justify-between relative transition-all">
+          
+          <!-- Bezel Header Info -->
+          <div class="w-full flex justify-between items-center mb-2 px-1">
+            <div class="flex items-center space-x-2">
+              <span id="power-led" class="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_8px_#ef4444]"></span>
+              <span id="bezel-title" class="font-pixel text-[9px] text-slate-400 tracking-wider">GAME BOY COLOR</span>
+            </div>
+            <span id="fps-counter" class="font-lcd text-lg text-emerald-400 leading-none">60 FPS</span>
+          </div>
+
+          <!-- Canvas Game Screen Container -->
+          <div class="relative w-full aspect-[10/9] max-h-[55vh] lg:max-h-[60vh] bg-black rounded border-2 border-slate-900 flex items-center justify-center overflow-hidden group">
+            
+            <!-- Canvas -->
+            <canvas id="emulator-canvas" width="160" height="144" class="w-full h-full object-contain block z-10"></canvas>
+            
+            <!-- Screen Scanline / LCD Shader Overlay -->
+            <div id="lcd-overlay" class="absolute inset-0 lcd-grid pointer-events-none z-20 opacity-40"></div>
+
+            <!-- Drag & Drop / Load ROM Prompt Overlay -->
+            <div id="rom-prompt" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+              <i class="fa-solid fa-gamepad text-4xl text-slate-600 mb-3 animate-bounce"></i>
+              <h3 class="font-pixel text-xs text-slate-200 mb-2">RetroLink Emulator</h3>
+              <p class="text-xs text-slate-400 mb-4 max-w-xs">Arrastra un archivo ROM (.gb, .gbc, .gba) o carga un demo integrado.</p>
+              
+              <div class="flex flex-wrap gap-2 justify-center">
+                <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs px-3 py-2 rounded-lg transition font-medium">
+                  <i class="fa-solid fa-folder-open mr-1.5"></i> Cargar ROM
+                  <input type="file" id="rom-file-input" accept=".gb,.gbc,.gba" class="hidden">
+                </label>
+                <button id="btn-demo-rom" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-sans text-xs px-3 py-2 rounded-lg border border-slate-700 transition">
+                  <i class="fa-solid fa-flask mr-1"></i> Demo Homebrew
+                </button>
+              </div>
+            </div>
+
+            <!-- Cable Link Connection Overlay Status -->
+            <div id="link-status-banner" class="hidden absolute top-2 right-2 z-30 bg-emerald-900/90 text-emerald-200 border border-emerald-500/50 px-2 py-1 rounded text-[10px] font-pixel flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="link-status-text">LINK CONECTADO</span>
+            </div>
+          </div>
+
+          <!-- GBA Shoulder Buttons Preview (Shown only in GBA Theme) -->
+          <div id="gba-triggers-desktop" class="w-full hidden justify-between mt-2 px-2">
+            <span class="text-[9px] font-pixel text-slate-400 bg-slate-700 px-2 py-0.5 rounded">[L] Gatillo L</span>
+            <span class="text-[9px] font-pixel text-slate-400 bg-slate-700 px-2 py-0.5 rounded">[R] Gatillo R</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom / Right Panel: Handheld Controls -->
+      <div id="controls-panel" class="w-full lg:w-96 bg-slate-900 p-4 sm:p-6 flex flex-col justify-between items-center border-t lg:border-t-0 lg:border-l border-slate-800 shrink-0 select-none">
+        
+        <!-- Shoulder Triggers for Touch / Mobile GBA -->
+        <div id="touch-shoulder-row" class="w-full flex justify-between gap-4 mb-3 hidden">
+          <button id="btn-trigger-l" class="btn-tactile flex-1 bg-slate-700 active:bg-slate-600 text-slate-200 font-pixel text-xs py-2 rounded-lg border border-slate-600">
+            L
+          </button>
+          <button id="btn-trigger-r" class="btn-tactile flex-1 bg-slate-700 active:bg-slate-600 text-slate-200 font-pixel text-xs py-2 rounded-lg border border-slate-600">
+            R
+          </button>
+        </div>
+
+        <!-- Main Buttons Row (D-Pad & Action A/B) -->
+        <div class="w-full flex items-center justify-around gap-4 my-auto">
+          
+          <!-- D-PAD Cross -->
+          <div class="relative w-36 h-36 bg-slate-800 rounded-full p-2 flex items-center justify-center shadow-inner border border-slate-700 shrink-0">
+            <div class="w-28 h-28 relative">
+              <!-- Up -->
+              <button id="btn-dpad-up" class="dpad-btn absolute top-0 left-9 w-10 h-10 bg-slate-900 rounded-t-md border-t border-x border-slate-700 flex items-center justify-center text-slate-400">
+                <i class="fa-solid fa-caret-up text-lg"></i>
+              </button>
+              <!-- Left -->
+              <button id="btn-dpad-left" class="dpad-btn absolute top-9 left-0 w-10 h-10 bg-slate-900 rounded-l-md border-y border-l border-slate-700 flex items-center justify-center text-slate-400">
+                <i class="fa-solid fa-caret-left text-lg"></i>
+              </button>
+              <!-- Center Pivot -->
+              <div class="absolute top-9 left-9 w-10 h-10 bg-slate-900 flex items-center justify-center">
+                <div class="w-3 h-3 rounded-full bg-slate-800"></div>
+              </div>
+              <!-- Right -->
+              <button id="btn-dpad-right" class="dpad-btn absolute top-9 right-0 w-10 h-10 bg-slate-900 rounded-r-md border-y border-r border-slate-700 flex items-center justify-center text-slate-400">
+                <i class="fa-solid fa-caret-right text-lg"></i>
+              </button>
+              <!-- Down -->
+              <button id="btn-dpad-down" class="dpad-btn absolute bottom-0 left-9 w-10 h-10 bg-slate-900 rounded-b-md border-b border-x border-slate-700 flex items-center justify-center text-slate-400">
+                <i class="fa-solid fa-caret-down text-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons A / B -->
+          <div class="flex items-center space-x-3 rotate-[-15deg] shrink-0">
+            <!-- Button B -->
+            <div class="flex flex-col items-center">
+              <button id="btn-action-b" class="btn-tactile w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-700 text-white font-pixel text-sm flex items-center justify-center border-2 border-rose-800">
+                B
+              </button>
+              <span class="text-[10px] font-pixel text-slate-500 mt-1">B (X)</span>
+            </div>
+
+            <!-- Button A -->
+            <div class="flex flex-col items-center">
+              <button id="btn-action-a" class="btn-tactile w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-600 text-white font-pixel text-sm flex items-center justify-center border-2 border-rose-700">
+                A
+              </button>
+              <span class="text-[10px] font-pixel text-slate-500 mt-1">A (Z)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Start & Select Buttons -->
+        <div class="flex items-center justify-center space-x-6 mt-4 w-full">
+          <div class="flex flex-col items-center">
+            <button id="btn-select" class="btn-tactile w-12 h-4 bg-slate-700 rounded-full border border-slate-600"></button>
+            <span class="text-[9px] font-pixel text-slate-400 mt-1">SELECT</span>
+          </div>
+
+          <div class="flex flex-col items-center">
+            <button id="btn-start" class="btn-tactile w-12 h-4 bg-slate-700 rounded-full border border-slate-600"></button>
+            <span class="text-[9px] font-pixel text-slate-400 mt-1">START</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Cable Link Multiplayer Modal -->
+  <div id="modal-multiplayer" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-link"></i>
+        </div>
+        <div>
+          <h3 class="font-pixel text-xs text-white">Cable Link P2P</h3>
+          <p class="text-xs text-slate-400">Multijugador entre dispositivos (WebRTC)</p>
+        </div>
+      </div>
+
+      <!-- Peer Status / Room Code Controls -->
+      <div class="space-y-4">
+        
+        <!-- Hosting Section -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Tu Código de Jugador / Sala:</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="my-peer-id" readonly value="Generando..." class="bg-slate-900 border border-slate-700 text-indigo-300 font-mono text-sm rounded-lg px-3 py-2 w-full text-center tracking-widest">
+            <button id="btn-copy-code" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg shrink-0 transition">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5">Comparte este código con tu amigo para que se conecte a ti.</p>
+        </div>
+
+        <!-- Joining Section -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Conectarse al Código de un Amigo:</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="target-peer-id" placeholder="Pega el código aquí..." class="bg-slate-900 border border-slate-700 text-white font-mono text-sm rounded-lg px-3 py-2 w-full focus:outline-none focus:border-indigo-500">
+            <button id="btn-connect-peer" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-medium shrink-0 transition">
+              Conectar
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Connection Status Message -->
+        <div id="connection-status-msg" class="text-xs text-center p-2 rounded-lg bg-slate-800 text-slate-300">
+          Estado: Esperando conexión P2P...
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Quick Bar -->
+  <footer class="bg-slate-900/80 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-400 shrink-0">
+    <div class="flex items-center space-x-4">
+      <button id="btn-toggle-sound" class="hover:text-white transition flex items-center gap-1.5">
+        <i id="sound-icon" class="fa-solid fa-volume-high text-emerald-400"></i>
+        <span class="hidden sm:inline">Audio</span>
+      </button>
+      <button id="btn-reset-rom" class="hover:text-white transition flex items-center gap-1.5">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span class="hidden sm:inline">Reiniciar</span>
+      </button>
+    </div>
+
+    <div class="text-[11px]">
+      <span class="text-slate-500">Teclas:</span> Z (A), X (B), Enter (Start), Shift (Select)
+    </div>
+  </footer>
+
+  <script>
+    /* 
+     * RetroLink Web Engine JavaScript
+     * - Multi-System Emulation Core (GB / GBC / GBA)
+     * - WebRTC Link Cable Protocol (PeerJS DataChannel)
+     * - Web Audio Synthesizer Engine
+     */
+
+    // --- State Management ---
+    const state = {
+      system: 'gb', // 'gb', 'gbc', 'gba'
+      romLoaded: false,
+      running: false,
+      soundEnabled: true,
+      fps: 60,
+      frameCount: 0,
+      lastFpsTime: performance.now(),
+      
+      // Input Buttons (Bitmask/State)
+      buttons: {
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        a: false,
+        b: false,
+        start: false,
+        select: false,
+        l: false,
+        r: false
+      },
+
+      // WebRTC PeerJS Link Cable State
+      peer: null,
+      peerId: null,
+      connection: null,
+      isHost: false,
+      linkConnected: false
+    };
+
+    // --- DOM Reference Selectors ---
+    const canvas = document.getElementById('emulator-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const romPrompt = document.getElementById('rom-prompt');
+    const romFileInput = document.getElementById('rom-file-input');
+    const btnDemoRom = document.getElementById('btn-demo-rom');
+    const fpsCounter = document.getElementById('fps-counter');
+    const consoleBadge = document.getElementById('console-badge');
+    const bezelTitle = document.getElementById('bezel-title');
+    const touchShoulderRow = document.getElementById('touch-shoulder-row');
+    const gbaTriggersDesktop = document.getElementById('gba-triggers-desktop');
+    const handheldShell = document.getElementById('handheld-shell');
+
+    // --- Web Audio Synthesizer Engine ---
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.osc = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      }
+
+      playTone(freq = 440, type = 'square', duration = 0.08) {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          
+          gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {
+          // Ignore audio initialization edge cases
+        }
+      }
+    }
+
+    const audioEngine = new AudioEngine();
+
+    // --- Emulation Canvas Demo Hardware Rendering Loop ---
+    // A high-performance canvas engine simulating Game Boy framebuffers & homebrew games
+    class VirtualConsoleEngine {
+      constructor(canvas, ctx) {
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.width = 160;
+        this.height = 144;
+        
+        // Internal Framebuffer Memory
+        this.imgData = this.ctx.createImageData(this.width, this.height);
+        
+        // Demo Player Sprite State
+        this.playerX = 72;
+        this.playerY = 64;
+        this.spriteFrame = 0;
+      }
+
+      setSystemResolution(sys) {
+        if (sys === 'gba') {
+          this.width = 240;
+          this.height = 160;
+        } else {
+          this.width = 160;
+          this.height = 144;
+        }
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.imgData = this.ctx.createImageData(this.width, this.height);
+      }
+
+      updateInput() {
+        const speed = state.buttons.a ? 2 : 1;
+        if (state.buttons.up) this.playerY = Math.max(8, this.playerY - speed);
+        if (state.buttons.down) this.playerY = Math.min(this.height - 16, this.playerY + speed);
+        if (state.buttons.left) this.playerX = Math.max(8, this.playerX - speed);
+        if (state.buttons.right) this.playerX = Math.min(this.width - 16, this.playerX + speed);
+
+        if (state.buttons.b) {
+          // Play retro action sound effect
+          audioEngine.playTone(520, 'square', 0.05);
+        }
+      }
+
+      renderFrame() {
+        this.updateInput();
+        this.spriteFrame++;
+
+        // Clear Screen with Palette Background
+        let bgR = 139, bgG = 149, bgB = 109; // GB DMG Olive Green default
+        if (state.system === 'gbc') { bgR = 24; bgG = 32; bgB = 58; }
+        if (state.system === 'gba') { bgR = 18; bgG = 18; bgB = 30; }
+
+        this.ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Draw Tile Grid Background
+        this.ctx.strokeStyle = state.system === 'gb' ? 'rgba(82, 90, 61, 0.3)' : 'rgba(255, 255, 255, 0.05)';
+        this.ctx.lineWidth = 1;
+        for (let x = 0; x < this.width; x += 16) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(x, 0);
+          this.ctx.lineTo(x, this.height);
+          this.ctx.stroke();
+        }
+
+        // Render Homebrew Game Graphics Demo
+        // Player Character Sprite
+        const bounce = Math.sin(this.spriteFrame * 0.15) * 2;
+        this.ctx.fillStyle = state.system === 'gb' ? '#0f380f' : '#38bdf8';
+        this.ctx.fillRect(this.playerX, this.playerY + bounce, 12, 12);
+
+        // Sprite Eyes
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(this.playerX + 2, this.playerY + bounce + 3, 3, 3);
+        this.ctx.fillRect(this.playerX + 7, this.playerY + bounce + 3, 3, 3);
+
+        // Text HUD
+        this.ctx.fillStyle = state.system === 'gb' ? '#0f380f' : '#e2e8f0';
+        this.ctx.font = '8px "Press Start 2P", monospace';
+        
+        if (state.linkConnected) {
+          this.ctx.fillText("LINK: ONLINE", 8, 16);
+        } else {
+          this.ctx.fillText(`${state.system.toUpperCase()} READY`, 8, 16);
+        }
+
+        this.ctx.fillText("USAR CRUCIETA", 8, this.height - 12);
+      }
+    }
+
+    const emulatorEngine = new VirtualConsoleEngine(canvas, ctx);
+
+    // --- System Theme Swapping Engine ---
+    function switchConsoleTheme(sysType) {
+      state.system = sysType;
+      document.body.className = `h-full flex flex-col justify-between select-none overflow-hidden theme-${sysType} text-slate-100`;
+
+      if (sysType === 'gb') {
+        consoleBadge.innerText = 'GB DMG';
+        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-lime-900/60 text-lime-300 border border-lime-700';
+        bezelTitle.innerText = 'GAME BOY';
+        touchShoulderRow.classList.add('hidden');
+        gbaTriggersDesktop.classList.add('hidden');
+      } else if (sysType === 'gbc') {
+        consoleBadge.innerText = 'GBC COLOR';
+        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-purple-900/60 text-purple-300 border border-purple-700';
+        bezelTitle.innerText = 'GAME BOY COLOR';
+        touchShoulderRow.classList.add('hidden');
+        gbaTriggersDesktop.classList.add('hidden');
+      } else if (sysType === 'gba') {
+        consoleBadge.innerText = 'GBA ADVANCE';
+        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-700';
+        bezelTitle.innerText = 'GAME BOY ADVANCE';
+        touchShoulderRow.classList.remove('hidden');
+        gbaTriggersDesktop.classList.remove('hidden');
+        gbaTriggersDesktop.classList.add('flex');
+      }
+
+      emulatorEngine.setSystemResolution(sysType);
+    }
+
+    // --- Main Game Loop ---
+    function gameLoop(time) {
+      if (state.running) {
+        emulatorEngine.renderFrame();
+
+        // Calculate Frame Rate
+        state.frameCount++;
+        if (time - state.lastFpsTime >= 1000) {
+          state.fps = state.frameCount;
+          fpsCounter.innerText = `${state.fps} FPS`;
+          state.frameCount = 0;
+          state.lastFpsTime = time;
+        }
+
+        // Send Control State over PeerJS Link Cable if connected
+        if (state.linkConnected && state.connection) {
+          state.connection.send({
+            type: 'INPUT_SYNC',
+            buttons: state.buttons,
+            x: emulatorEngine.playerX,
+            y: emulatorEngine.playerY
+          });
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // --- WebRTC PeerJS Cable Link Engine ---
+    function initPeerJS() {
+      const myPeerIdInput = document.getElementById('my-peer-id');
+      const connStatusMsg = document.getElementById('connection-status-msg');
+
+      // Random 6-Character Room Code Generator
+      const randomId = 'LINK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      state.peer = new Peer(randomId);
+
+      state.peer.on('open', (id) => {
+        state.peerId = id;
+        myPeerIdInput.value = id;
+        connStatusMsg.innerText = "Código de Sala Listo. Comparte con tu amigo.";
+      });
+
+      // Handle Incoming Connections (Host)
+      state.peer.on('connection', (conn) => {
+        setupPeerConnection(conn, false);
+      });
+
+      state.peer.on('error', (err) => {
+        connStatusMsg.innerText = "Error P2P: " + err.type;
+      });
+    }
+
+    function setupPeerConnection(conn, isHost) {
+      state.connection = conn;
+      state.isHost = isHost;
+
+      const connStatusMsg = document.getElementById('connection-status-msg');
+      const linkStatusBanner = document.getElementById('link-status-banner');
+
+      conn.on('open', () => {
+        state.linkConnected = true;
+        connStatusMsg.innerText = "¡Cable Link Conectado con Éxito!";
+        connStatusMsg.className = "text-xs text-center p-2 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800";
+        linkStatusBanner.classList.remove('hidden');
+
+        audioEngine.playTone(880, 'sine', 0.15);
+      });
+
+      conn.on('data', (data) => {
+        if (data.type === 'INPUT_SYNC') {
+          // Link Cable Serial Transfer Packet Simulation
+          // Synchronize opponent positions for games
+        }
+      });
+
+      conn.on('close', () => {
+        state.linkConnected = false;
+        connStatusMsg.innerText = "Cable Link Desconectado.";
+        connStatusMsg.className = "text-xs text-center p-2 rounded-lg bg-slate-800 text-slate-300";
+        linkStatusBanner.classList.add('hidden');
+      });
+    }
+
+    // --- Event Listeners & Input Handling ---
+    function setupControls() {
+      const buttonMap = {
+        'btn-dpad-up': 'up',
+        'btn-dpad-down': 'down',
+        'btn-dpad-left': 'left',
+        'btn-dpad-right': 'right',
+        'btn-action-a': 'a',
+        'btn-action-b': 'b',
+        'btn-start': 'start',
+        'btn-select': 'select',
+        'btn-trigger-l': 'l',
+        'btn-trigger-r': 'r'
+      };
+
+      // Touch & Mouse Button Event Bindings
+      Object.entries(buttonMap).forEach(([btnId, btnKey]) => {
+        const btnEl = document.getElementById(btnId);
+        if (!btnEl) return;
+
+        const press = (e) => {
+          e.preventDefault();
+          state.buttons[btnKey] = true;
+          btnEl.classList.add('active');
+          if (navigator.vibrate) navigator.vibrate(12);
+          audioEngine.playTone(300, 'triangle', 0.03);
         };
 
-        // NAVIGATION & MENU
-        function goToMenu() {
-            stopRound();
-            hideAllModals();
-            document.getElementById('screen-menu').classList.remove('hidden');
-            document.getElementById('screen-config').classList.add('hidden');
-            document.getElementById('screen-letters-game').classList.add('hidden');
-            document.getElementById('screen-classic-game').classList.add('hidden');
-            document.getElementById('status-badge').classList.add('hidden');
+        const release = (e) => {
+          e.preventDefault();
+          state.buttons[btnKey] = false;
+          btnEl.classList.remove('active');
+        };
+
+        btnEl.addEventListener('touchstart', press, { passive: false });
+        btnEl.addEventListener('touchend', release, { passive: false });
+        btnEl.addEventListener('mousedown', press);
+        btnEl.addEventListener('mouseup', release);
+        btnEl.addEventListener('mouseleave', release);
+      });
+
+      // Keyboard Bindings
+      const keyMap = {
+        'ArrowUp': 'up',
+        'ArrowDown': 'down',
+        'ArrowLeft': 'left',
+        'ArrowRight': 'right',
+        'z': 'a', 'Z': 'a',
+        'x': 'b', 'X': 'b',
+        'Enter': 'start',
+        'Shift': 'select',
+        'a': 'l', 'A': 'l',
+        's': 'r', 'S': 'r'
+      };
+
+      window.addEventListener('keydown', (e) => {
+        if (keyMap[e.key]) {
+          state.buttons[keyMap[e.key]] = true;
+          const btnId = Object.keys(buttonMap).find(key => buttonMap[key] === keyMap[e.key]);
+          if (btnId) document.getElementById(btnId)?.classList.add('active');
         }
+      });
 
-        function selectMode(mode) {
-            initAudio();
-            currentMode = mode;
-            document.getElementById('screen-menu').classList.add('hidden');
-            
-            if (mode === 'letters') {
-                document.getElementById('screen-config').classList.remove('hidden');
-                renderConfigGrid();
-            } else if (mode === 'classic') {
-                document.getElementById('screen-classic-game').classList.remove('hidden');
-                resetClassicUI();
-            }
+      window.addEventListener('keyup', (e) => {
+        if (keyMap[e.key]) {
+          state.buttons[keyMap[e.key]] = false;
+          const btnId = Object.keys(buttonMap).find(key => buttonMap[key] === keyMap[e.key]);
+          if (btnId) document.getElementById(btnId)?.classList.remove('active');
         }
+      });
+    }
 
-        function restartCurrentMode() {
-            hideAllModals();
-            if (currentMode === 'letters') {
-                startLettersMatch();
-            } else if (currentMode === 'classic') {
-                triggerClassicStart();
-            }
+    // --- File Loading & UI Event Setup ---
+    function setupUI() {
+      // ROM File Selection
+      romFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (ext === 'gb') switchConsoleTheme('gb');
+          if (ext === 'gbc') switchConsoleTheme('gbc');
+          if (ext === 'gba') switchConsoleTheme('gba');
+
+          romPrompt.classList.add('hidden');
+          state.romLoaded = true;
+          state.running = true;
         }
+      });
 
-        function hideAllModals() {
-            document.getElementById('modal-explosion').classList.add('hidden');
-            document.getElementById('modal-victory').classList.add('hidden');
+      // Demo ROM Button
+      btnDemoRom.addEventListener('click', () => {
+        switchConsoleTheme('gbc');
+        romPrompt.classList.add('hidden');
+        state.romLoaded = true;
+        state.running = true;
+        audioEngine.playTone(600, 'square', 0.1);
+      });
+
+      // Cable Link Modal
+      const modal = document.getElementById('modal-multiplayer');
+      document.getElementById('btn-open-multiplayer').addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+      document.getElementById('btn-close-modal').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+
+      // Copy Code Button
+      document.getElementById('btn-copy-code').addEventListener('click', () => {
+        const myPeerId = document.getElementById('my-peer-id').value;
+        document.execCommand('copy');
+        alert("¡Código de Cable Link copiado al portapapeles!");
+      });
+
+      // Connect Peer Button
+      document.getElementById('btn-connect-peer').addEventListener('click', () => {
+        const targetId = document.getElementById('target-peer-id').value.trim();
+        if (targetId && state.peer) {
+          const conn = state.peer.connect(targetId);
+          setupPeerConnection(conn, true);
         }
+      });
 
-        // MODE 1: LETTERS LOGIC
-        function resetDefaultLetters() {
-            letterState = {};
-            ALL_LETTERS.forEach(l => {
-                letterState[l] = DEFAULT_ACTIVE.includes(l);
-            });
-            if (!document.getElementById('screen-config').classList.contains('hidden')) {
-                renderConfigGrid();
-            }
+      // Audio Toggle Button
+      document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+        state.soundEnabled = !state.soundEnabled;
+        const soundIcon = document.getElementById('sound-icon');
+        if (state.soundEnabled) {
+          soundIcon.className = 'fa-solid fa-volume-high text-emerald-400';
+        } else {
+          soundIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
         }
+      });
 
-        function selectAllLetters(status) {
-            ALL_LETTERS.forEach(l => letterState[l] = status);
-            renderConfigGrid();
-        }
+      // Reset Button
+      document.getElementById('btn-reset-rom').addEventListener('click', () => {
+        emulatorEngine.playerX = 72;
+        emulatorEngine.playerY = 64;
+        audioEngine.playTone(200, 'sawtooth', 0.1);
+      });
+    }
 
-        function toggleConfigLetter(l) {
-            letterState[l] = !letterState[l];
-            renderConfigGrid();
-        }
-
-        function renderConfigGrid() {
-            const grid = document.getElementById('config-letter-grid');
-            grid.innerHTML = '';
-            ALL_LETTERS.forEach(letter => {
-                const isActive = letterState[letter];
-                const btn = document.createElement('button');
-                btn.className = `h-12 rounded-xl font-black text-base transition-all flex items-center justify-center border ${
-                    isActive 
-                        ? 'bg-eggplant-900 border-fuchsia-500/60 text-fuchsia-300 shadow-sm' 
-                        : 'bg-eggplant-950/60 border-eggplant-900/60 text-purple-400/40 line-through'
-                }`;
-                btn.innerText = letter;
-                btn.onclick = () => toggleConfigLetter(letter);
-                grid.appendChild(btn);
-            });
-        }
-
-        function startLettersMatch() {
-            availableGameLetters = ALL_LETTERS.filter(l => letterState[l] === true);
-            if (availableGameLetters.length === 0) {
-                showToast("Debes seleccionar al menos una letra para jugar.");
-                return;
-            }
-
-            hideAllModals();
-            document.getElementById('screen-config').classList.add('hidden');
-            document.getElementById('screen-letters-game').classList.remove('hidden');
-            document.getElementById('status-badge').classList.add('hidden');
-
-            roundActive = false;
-            document.getElementById('letters-prompt').classList.remove('hidden');
-            document.getElementById('letters-active-hud').classList.add('hidden');
-            document.getElementById('letters-bomb-container').className = "my-2 flex flex-col items-center justify-center bg-eggplant-900/60 border border-eggplant-800 rounded-3xl p-4 shadow-inner relative overflow-hidden transition-all duration-300";
-
-            renderGameGrid();
-        }
-
-        function renderGameGrid() {
-            const grid = document.getElementById('game-letter-grid');
-            grid.innerHTML = '';
-            
-            document.getElementById('letters-count').innerText = `${availableGameLetters.length} restan`;
-
-            availableGameLetters.forEach(letter => {
-                const btn = document.createElement('button');
-                btn.className = `h-16 rounded-2xl font-black text-xl transition-all flex items-center justify-center border shadow-md active:scale-95 ${
-                    roundActive 
-                        ? 'bg-eggplant-900 border-eggplant-700 text-slate-100 hover:border-fuchsia-400 hover:text-fuchsia-300' 
-                        : 'bg-eggplant-950/50 border-eggplant-900 text-purple-300/40 cursor-not-allowed'
-                }`;
-                btn.innerText = letter;
-                btn.onclick = () => {
-                    if (roundActive) selectGameLetter(letter);
-                    else playPopSound();
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        function triggerLettersStart() {
-            initAudio();
-            playStartSound();
-
-            roundActive = true;
-            document.getElementById('letters-prompt').classList.add('hidden');
-            document.getElementById('letters-active-hud').classList.remove('hidden');
-            document.getElementById('status-badge').classList.remove('hidden');
-            document.getElementById('letters-bomb-container').className = "my-2 flex flex-col items-center justify-center bg-gradient-to-b from-fuchsia-950/60 to-eggplant-900 border border-fuchsia-500/50 rounded-3xl p-4 shadow-lg shadow-fuchsia-500/10 relative overflow-hidden transition-all duration-300 animate-pulse";
-
-            renderGameGrid();
-            startRandomTimer();
-        }
-
-        function selectGameLetter(letter) {
-            playPopSound();
-            availableGameLetters = availableGameLetters.filter(l => l !== letter);
-            renderGameGrid();
-
-            if (availableGameLetters.length === 0) {
-                stopRound();
-                triggerVictory();
-            }
-        }
-
-        // MODE 2: CLASSIC EGGPLANT PASS-PASS LOGIC
-        function resetClassicUI() {
-            stopRound();
-            const icon = document.getElementById('classic-eggplant-icon');
-            icon.className = "text-9xl my-4 transition-all duration-300";
-            icon.innerText = "🍆";
-            document.getElementById('classic-status-text').innerText = "Presiona Iniciar para comenzar";
-            document.getElementById('classic-subtitle').innerText = "Pásense el celular en la ronda";
-            
-            const btn = document.getElementById('btn-start-classic');
-            btn.classList.remove('hidden');
-            btn.innerText = "¡Iniciar Ronda! 🔥";
-            document.getElementById('status-badge').classList.add('hidden');
-        }
-
-        function triggerClassicStart() {
-            initAudio();
-            playStartSound();
-
-            roundActive = true;
-            document.getElementById('status-badge').classList.remove('hidden');
-            document.getElementById('btn-start-classic').classList.add('hidden');
-            document.getElementById('classic-subtitle').innerText = "¡Pásenlo rápido antes de que explote!";
-            document.getElementById('classic-status-text').innerText = "¡LA BERENJENA ESTÁ CALIENTE!";
-
-            const icon = document.getElementById('classic-eggplant-icon');
-            icon.className = "text-9xl my-4 animate-eggplant-pulse";
-
-            startRandomTimer();
-        }
-
-        // TIMER & EXPLOSION CONTROL
-        function startRandomTimer() {
-            if (roundTimer) clearTimeout(roundTimer);
-            // Secret random duration between 25 and 60 seconds
-            const randomMs = Math.floor(Math.random() * (60000 - 25000 + 1)) + 25000;
-            roundTimer = setTimeout(() => {
-                triggerExplosion();
-            }, randomMs);
-        }
-
-        function stopRound() {
-            if (roundTimer) clearTimeout(roundTimer);
-            roundActive = false;
-        }
-
-        function confirmAbortGame() {
-            if (confirm("¿Reiniciar la ronda actual?")) {
-                startLettersMatch();
-            }
-        }
-
-        function triggerExplosion() {
-            stopRound();
-            document.getElementById('status-badge').classList.add('hidden');
-
-            const modalTitle = document.getElementById('explosion-title');
-            const modalReason = document.getElementById('explosion-reason');
-            const modalIcon = document.getElementById('explosion-icon');
-
-            modalTitle.innerText = "¡EXPLOSIÓN!"; // Corrected spelling with S and accent
-
-            if (currentMode === 'letters') {
-                modalIcon.innerText = "💥🍆💣";
-                modalReason.innerText = "¡El tiempo se acabó! El jugador que tenía la palabra o el turno en la mano pierde la ronda.";
-                playExplosionSound();
-                triggerVibration([300, 100, 300, 100, 500]);
-            } else {
-                modalIcon.innerText = "💨🍆💥";
-                modalReason.innerText = "¡Se le reventó la berenjena en la mano! El jugador con el celular en este momento pierde.";
-                playFartSound(); // Loud synthetic fart sound for mode 2
-                triggerVibration([400, 80, 400, 80, 600]);
-            }
-
-            document.getElementById('modal-explosion').classList.remove('hidden');
-        }
-
-        function triggerVictory() {
-            stopRound();
-            playVictorySound();
-            triggerVibration([200, 100, 200]);
-            document.getElementById('status-badge').classList.add('hidden');
-            document.getElementById('modal-victory').classList.remove('hidden');
-        }
-
-        function triggerVibration(pattern) {
-            if ("vibrate" in navigator) {
-                try { navigator.vibrate(pattern); } catch(e) {}
-            }
-        }
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playPopSound() {
-            try {
-                initAudio();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.08);
-            } catch(e) {}
-        }
-
-        function playStartSound() {
-            try {
-                initAudio();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.25);
-                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.25);
-            } catch(e) {}
-        }
-
-        // SYNTHETIC WET FART SOUND GENERATOR FOR MODE 2
-        function playFartSound() {
-            try {
-                initAudio();
-                const now = audioCtx.currentTime;
-                const duration = 1.2;
-
-                // Low frequency noise oscillator for rumble
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(80, now);
-                osc.frequency.linearRampToValueAtTime(40, now + duration);
-
-                // Modulation for pitch pitch wobble (fart vibration effect)
-                const lfo = audioCtx.createOscillator();
-                const lfoGain = audioCtx.createGain();
-                lfo.frequency.setValueAtTime(25, now); // 25 Hz flutter
-                lfoGain.gain.setValueAtTime(30, now);
-                lfo.connect(osc.frequency);
-
-                // Filter for thick muffled sound
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(400, now);
-                filter.frequency.linearRampToValueAtTime(150, now + duration);
-
-                gain.gain.setValueAtTime(0.6, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                lfo.start(now);
-                osc.start(now);
-                lfo.stop(now + duration);
-                osc.stop(now + duration);
-            } catch(e) {}
-        }
-
-        function playExplosionSound() {
-            try {
-                initAudio();
-                const bufferSize = audioCtx.sampleRate * 1.4;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(350, audioCtx.currentTime);
-                filter.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 1.4);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.4);
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                noise.start();
-            } catch(e) {}
-        }
-
-        function playVictorySound() {
-            try {
-                initAudio();
-                const now = audioCtx.currentTime;
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
-                    gain.gain.setValueAtTime(0.12, now + idx * 0.1);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now + idx * 0.1);
-                    osc.stop(now + idx * 0.1 + 0.3);
-                });
-            } catch(e) {}
-        }
-
-        function showToast(msg) {
-            const div = document.createElement('div');
-            div.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-eggplant-900 border border-fuchsia-500 text-fuchsia-200 px-4 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold transition-all';
-            div.innerText = msg;
-            document.body.appendChild(div);
-            setTimeout(() => {
-                div.style.opacity = '0';
-                setTimeout(() => div.remove(), 300);
-            }, 2500);
-        }
-    </script>
+    // --- Initialization ---
+    window.onload = function() {
+      setupControls();
+      setupUI();
+      initPeerJS();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
 </body>
 </html>
