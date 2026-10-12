@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GayBoy Emulator - GB / GBC / GBA con Cable Link & Cloud</title>
+    <title>GayBoy Emulator - GB / GBC / GBA</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PeerJS para conexión P2P (Cable Link) -->
+    <!-- PeerJS para Cable Link P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Emulator JS Engine Core -->
+    <script src="https://cdn.jsdelivr.net/npm/jsgb@0.3.0/jsgb.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap');
 
@@ -123,27 +125,27 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- Selector de Perfil Actual -->
-            <button onclick="openProfileModal()" class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-pink-300 border border-pink-500/30 text-xs px-3 py-1.5 rounded-lg transition font-medium">
-                <i data-lucide="user" class="w-4 h-4"></i>
-                <span id="currentProfileLabel">Perfil: Ninguno</span>
+            <!-- Selector de Perfil -->
+            <button onclick="openProfileModal()" class="bg-gray-800 hover:bg-gray-700 text-xs font-pixel text-pink-300 border border-gray-700 rounded-lg px-3 py-2 flex items-center gap-1.5 transition">
+                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                <span id="currentProfileDisplay">Perfil: Ninguno</span>
             </button>
 
             <!-- Console Selector -->
-            <select id="consoleModeSelect" onchange="changeConsoleMode(this.value)" class="bg-gray-800 text-xs font-pixel text-pink-300 border border-gray-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-pink-500">
+            <select id="consoleModeSelect" onchange="changeConsoleMode(this.value)" class="bg-gray-800 text-xs font-pixel text-pink-300 border border-gray-700 rounded-lg px-2 py-2 focus:outline-none">
                 <option value="gb">GB Original</option>
                 <option value="gbc" selected>GB Color</option>
                 <option value="gba">GB Advance</option>
             </select>
 
             <!-- Google Drive Cloud Button -->
-            <button onclick="toggleDriveModal()" class="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
+            <button onclick="toggleDriveModal()" class="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">
                 <i data-lucide="cloud" class="w-4 h-4"></i>
                 <span class="hidden md:inline">Drive Cloud</span>
             </button>
 
             <!-- Cable Link Button -->
-            <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
+            <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">
                 <i data-lucide="network" class="w-4 h-4"></i>
                 <span class="hidden md:inline">Cable Link</span>
             </button>
@@ -153,7 +155,6 @@
     <!-- Main Emulator Container -->
     <main class="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center justify-center">
         
-        <!-- Physical Console Frame -->
         <div id="consoleBody" class="console-gbc w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between">
             
             <!-- Left Side: Display Screen -->
@@ -162,7 +163,7 @@
                     
                     <div class="w-full flex justify-between items-center mb-2 px-1">
                         <div class="flex items-center gap-2">
-                            <div id="powerLed" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                            <div id="powerLed" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></div>
                             <span id="consoleLabel" class="font-pixel text-[10px] text-gray-400 tracking-widest">GAME BOY COLOR</span>
                         </div>
                         <span id="fpsCounter" class="font-pixel text-[9px] text-emerald-400">60 FPS</span>
@@ -172,7 +173,7 @@
                     <div class="relative w-full aspect-[10/9] max-w-[320px] md:max-w-none flex items-center justify-center overflow-hidden rounded-lg shadow-inner">
                         <div id="lcdWrapper" class="lcd-color w-full h-full relative flex items-center justify-center">
                             
-                            <!-- Canvas Render Target (Ejecución real de ROM) -->
+                            <!-- Canvas Render Target -->
                             <canvas id="gameCanvas" width="160" height="144" class="w-full h-full object-contain image-render-pixelated hidden"></canvas>
                             
                             <!-- CRT Scanlines -->
@@ -224,8 +225,8 @@
                 
                 <!-- GBA L/R Shoulders -->
                 <div id="gbaShoulders" class="w-full flex justify-between px-4 hidden">
-                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('L', true)" onmouseup="handleButton('L', false)" ontouchstart="handleButton('L', true)" ontouchend="handleButton('L', false)">L</button>
-                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('R', true)" onmouseup="handleButton('R', false)" ontouchstart="handleButton('R', true)" ontouchend="handleButton('R', false)">R</button>
+                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('L', true)" onmouseup="handleButton('L', false)">L</button>
+                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('R', true)" onmouseup="handleButton('R', false)">R</button>
                 </div>
 
                 <!-- Main D-Pad & Action Buttons Container -->
@@ -275,28 +276,30 @@
         </div>
     </main>
 
-    <!-- Profile Selection Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Modal de Selección / Creación de Perfil -->
+    <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2 text-pink-400">
                     <i data-lucide="user" class="w-5 h-5"></i>
-                    <h2 class="font-pixel text-xs">Seleccionar Perfil de Usuario</h2>
+                    <h2 class="font-pixel text-xs">Gestión de Perfil de Usuario</h2>
                 </div>
+                <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <p class="text-xs text-gray-300 mb-4">
-                Cada usuario guarda sus propios avances independientemente en tu carpeta de Google Drive.
-            </p>
+            <p class="text-xs text-gray-300 mb-4">Selecciona tu perfil o crea uno nuevo para mantener tus partidas independientes en Google Drive.</p>
             
-            <div id="profileListContainer" class="space-y-2 mb-4 max-h-48 overflow-y-auto pr-1">
-                <!-- Perfiles inyectados por JS -->
+            <div class="mb-4">
+                <label class="block text-[10px] font-pixel text-gray-400 mb-2">PERFILES EXISTENTES:</label>
+                <div id="profilesList" class="flex flex-col gap-2 max-h-40 overflow-y-auto mb-4">
+                    <!-- Dinámico -->
+                </div>
             </div>
 
             <div class="border-t border-gray-800 pt-4">
                 <label class="block text-[10px] font-pixel text-gray-400 mb-1">CREAR NUEVO USUARIO:</label>
                 <div class="flex gap-2">
-                    <input type="text" id="newProfileInput" placeholder="Ej: Ger, Frank..." class="bg-gray-950 border border-gray-800 text-white text-xs rounded-lg p-2.5 flex-1 focus:outline-none focus:border-pink-500">
-                    <button onclick="createNewProfile()" class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-xs font-pixel transition">Crear</button>
+                    <input type="text" id="newProfileName" placeholder="Ej. Ger, Frank..." class="bg-gray-950 border border-gray-800 text-white text-xs rounded-lg p-2.5 flex-1 focus:outline-none focus:border-pink-500">
+                    <button onclick="createNewProfile()" class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-xs font-pixel">Crear</button>
                 </div>
             </div>
         </div>
@@ -308,18 +311,13 @@
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2 text-amber-400">
                     <i data-lucide="cloud" class="w-5 h-5"></i>
-                    <h2 class="font-pixel text-xs">Google Drive Cloud (Vinculado)</h2>
+                    <h2 class="font-pixel text-xs">Google Drive Cloud (Carpeta Compartida)</h2>
                 </div>
-                <button onclick="toggleDriveModal()" class="text-gray-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="toggleDriveModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <p class="text-xs text-gray-300 mb-4">
-                Carpeta raíz de Google Drive configurada para almacenar perfiles, configuraciones y partidas de todos tus juegos:
-            </p>
+            <p class="text-xs text-gray-300 mb-4">Enlace base configurado para tu carpeta de Drive compartida:</p>
             <div class="mb-4">
-                <label class="block text-[10px] font-pixel text-gray-400 mb-1">ENLACE DE CARPETA BASE:</label>
-                <input type="text" id="driveFolderUrl" readonly class="bg-gray-950 border border-gray-800 text-amber-300 text-xs rounded-lg p-2.5 w-full font-mono">
+                <input type="text" id="driveFolderUrl" readonly value="https://drive.google.com/drive/folders/1Uv_nrvXSMaEUDilVEtqHv8HTk32l3HX9" class="bg-gray-950 border border-gray-800 text-amber-300 text-xs rounded-lg p-2.5 w-full font-mono">
             </div>
             <button onclick="toggleDriveModal()" class="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-pixel py-2.5 rounded-xl transition">Aceptar</button>
         </div>
@@ -329,29 +327,16 @@
     <div id="linkModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-2 text-indigo-400">
-                    <i data-lucide="network" class="w-5 h-5"></i>
-                    <h2 class="font-pixel text-xs">Conexión Cable Link P2P</h2>
-                </div>
-                <button onclick="toggleLinkModal()" class="text-gray-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-2 text-indigo-400"><i data-lucide="network" class="w-5 h-5"></i><h2 class="font-pixel text-xs">Cable Link P2P</h2></div>
+                <button onclick="toggleLinkModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-
-            <p class="text-xs text-gray-300 mb-4">
-                Conéctate con otro dispositivo para intercambios y combates multijugador en tiempo real.
-            </p>
-
             <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 mb-4">
                 <label class="block text-[10px] font-pixel text-gray-400 mb-1">TU CÓDIGO DE SALA:</label>
                 <div class="flex gap-2">
                     <input type="text" id="myPeerId" readonly value="Generando..." class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs rounded-lg p-2 flex-1 font-mono">
-                    <button onclick="copyPeerId()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    </button>
+                    <button onclick="copyPeerId()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
                 </div>
             </div>
-
             <div class="mb-4">
                 <label class="block text-[10px] font-pixel text-gray-400 mb-1">CONECTAR A OTRA SALA:</label>
                 <div class="flex gap-2">
@@ -359,138 +344,108 @@
                     <button onclick="connectToPeer()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Conectar</button>
                 </div>
             </div>
-
-            <div id="linkStatus" class="text-xs text-center p-2 rounded-lg bg-gray-800 text-gray-400">
-                Estado: Desconectado
-            </div>
+            <div id="linkStatus" class="text-xs text-center p-2 rounded-lg bg-gray-800 text-gray-400">Estado: Desconectado</div>
         </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-pink-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2 font-medium z-50 flex items-center gap-2">
+    <div id="toast" class="fixed bottom-4 right-4 bg-pink-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 font-medium">
         <i data-lucide="info" class="w-4 h-4"></i>
         <span id="toastMsg">Mensaje</span>
     </div>
 
-    <!-- Main Engine Script -->
+    <!-- Script Principal -->
     <script>
         lucide.createIcons();
-
-        // Enlace raíz de Google Drive proporcionado
-        const BASE_DRIVE_LINK = "https://drive.google.com/drive/folders/1Uv_nrvXSMaEUDilVEtqHv8HTk32l3HX9?usp=sharing";
-        document.getElementById('driveFolderUrl').value = BASE_DRIVE_LINK;
 
         const emulatorState = {
             consoleMode: 'gbc',
             romLoaded: false,
             romName: '',
             romBuffer: null,
+            currentUser: localStorage.getItem('gayboy_current_user') || null,
+            profiles: JSON.parse(localStorage.getItem('gayboy_profiles') || '["Ger", "Frank"]'),
             peer: null,
             conn: null,
-            animationFrameId: null,
-            currentProfile: null,
-            profiles: JSON.parse(localStorage.getItem('gayboy_profiles') || '["Ger", "Frank"]')
+            animationFrameId: null
         };
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Inicializar perfiles al cargar
-        function initProfiles() {
-            renderProfileList();
-            const lastProfile = localStorage.getItem('gayboy_last_profile');
-            if (lastProfile && emulatorState.profiles.includes(lastProfile)) {
-                selectProfile(lastProfile, false);
-            } else if (emulatorState.profiles.length > 0) {
-                selectProfile(emulatorState.profiles[0], false);
+        // Inicializar Perfil al cargar
+        function checkInitialProfile() {
+            if (!emulatorState.currentUser && emulatorState.profiles.length > 0) {
+                emulatorState.currentUser = emulatorState.profiles[0];
+                localStorage.setItem('gayboy_current_user', emulatorState.currentUser);
             }
+            updateProfileDisplay();
         }
 
-        function renderProfileList() {
-            const container = document.getElementById('profileListContainer');
-            container.innerHTML = '';
-            emulatorState.profiles.forEach(prof => {
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium flex justify-between items-center transition ${emulatorState.currentProfile === prof ? 'bg-pink-600/30 border border-pink-500 text-pink-300' : 'bg-gray-950 hover:bg-gray-800 text-gray-300'}`;
-                btn.innerHTML = `<span>Perfil: <strong>${prof}</strong> (Drive Cloud/${prof}/)</span> <span class="text-[10px] text-pink-400 font-pixel">SELECCIONAR</span>`;
-                btn.onclick = () => selectProfile(prof);
-                container.appendChild(btn);
-            });
-        }
-
-        function selectProfile(profileName, closeAfter = true) {
-            emulatorState.currentProfile = profileName;
-            localStorage.setItem('gayboy_last_profile', profileName);
-            document.getElementById('currentProfileLabel').textContent = `Perfil: ${profileName}`;
-            renderProfileList();
-            if (closeAfter) {
-                document.getElementById('profileModal').classList.add('hidden');
-                showToast(`Perfil activo: ${profileName}`);
-            }
-        }
-
-        function createNewProfile() {
-            const input = document.getElementById('newProfileInput');
-            const name = input.value.trim();
-            if (!name) { showToast("Ingresa un nombre válido"); return; }
-            if (emulatorState.profiles.includes(name)) { showToast("Este perfil ya existe"); return; }
-            
-            emulatorState.profiles.push(name);
-            localStorage.setItem('gayboy_profiles', JSON.stringify(emulatorState.profiles));
-            input.value = '';
-            renderProfileList();
-            selectProfile(name);
-            showToast(`Perfil "${name}" creado y vinculado a Google Drive`);
+        function updateProfileDisplay() {
+            const display = document.getElementById('currentProfileDisplay');
+            display.textContent = emulatorState.currentUser ? `Perfil: ${emulatorState.currentUser}` : "Seleccionar Perfil";
         }
 
         function openProfileModal() {
+            renderProfilesList();
             document.getElementById('profileModal').classList.remove('hidden');
         }
 
-        // Inicializar PeerJS para Cable Link
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        function renderProfilesList() {
+            const container = document.getElementById('profilesList');
+            container.innerHTML = '';
+            emulatorState.profiles.forEach(prof => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex justify-between items-center ${emulatorState.currentUser === prof ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`;
+                btn.innerHTML = `<span>${prof}</span> ${emulatorState.currentUser === prof ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}`;
+                btn.onclick = () => selectProfile(prof);
+                container.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function selectProfile(name) {
+            emulatorState.currentUser = name;
+            localStorage.setItem('gayboy_current_user', name);
+            updateProfileDisplay();
+            closeProfileModal();
+            showToast(`Perfil cambiado a: ${name}`);
+        }
+
+        function createNewProfile() {
+            const input = document.getElementById('newProfileName');
+            const name = input.value.trim();
+            if (!name) return;
+            if (!emulatorState.profiles.includes(name)) {
+                emulatorState.profiles.push(name);
+                localStorage.setItem('gayboy_profiles', JSON.stringify(emulatorState.profiles));
+            }
+            selectProfile(name);
+            input.value = '';
+        }
+
+        // PeerJS Cable Link
         function initLink() {
-            const randomId = 'gayboy-' + Math.floor(1000 + Math.random() * 9000);
-            emulatorState.peer = new Peer(randomId);
-
-            emulatorState.peer.on('open', (id) => {
-                document.getElementById('myPeerId').value = id;
-            });
-
-            emulatorState.peer.on('connection', (connection) => {
-                emulatorState.conn = connection;
-                setupConnectionListeners();
-                updateLinkStatus('¡Conectado como Host!', 'emerald');
-                showToast('¡Amigo conectado por Cable Link!');
-            });
+            emulatorState.peer = new Peer('gayboy-' + Math.floor(1000 + Math.random() * 9000));
+            emulatorState.peer.on('open', id => document.getElementById('myPeerId').value = id);
+            emulatorState.peer.on('connection', c => { emulatorState.conn = c; setupConn(); showToast('¡Amigo conectado!'); });
         }
 
         function connectToPeer() {
-            const targetId = document.getElementById('targetPeerId').value.trim();
-            if (!targetId) return;
-
-            updateLinkStatus('Conectando...', 'amber');
-            emulatorState.conn = emulatorState.peer.connect(targetId);
-            setupConnectionListeners();
+            const target = document.getElementById('targetPeerId').value.trim();
+            if (!target) return;
+            emulatorState.conn = emulatorState.peer.connect(target);
+            setupConn();
         }
 
-        function setupConnectionListeners() {
-            emulatorState.conn.on('open', () => {
-                updateLinkStatus('¡Cable Link Establecido!', 'emerald');
-                showToast('¡Conectado exitosamente!');
-            });
-            emulatorState.conn.on('data', (data) => {
-                console.log('Datos Link recibidos:', data);
-            });
-            emulatorState.conn.on('close', () => {
-                updateLinkStatus('Conexión cerrada', 'gray');
-                showToast('Cable Link desconectado');
-            });
-        }
-
-        function updateLinkStatus(msg, color) {
-            const statusEl = document.getElementById('linkStatus');
-            statusEl.textContent = 'Estado: ' + msg;
-            statusEl.className = `text-xs text-center p-2 rounded-lg bg-${color}-950 text-${color}-400 border border-${color}-800`;
+        function setupConn() {
+            emulatorState.conn.on('open', () => showToast('¡Cable Link Establecido!'));
+            emulatorState.conn.on('data', data => console.log('Link data:', data));
         }
 
         function toggleLinkModal() { document.getElementById('linkModal').classList.toggle('hidden'); }
@@ -501,16 +456,16 @@
             showToast("Código copiado al portapapeles");
         }
 
-        // Carga de ROM y Ejecución en Canvas Real
+        // Carga de ROM
         function handleRomUpload(event) {
-            if (!emulatorState.currentProfile) {
-                openProfileModal();
-                showToast("Selecciona un perfil primero");
-                return;
-            }
-
             const file = event.target.files[0];
             if (!file) return;
+
+            if (!emulatorState.currentUser) {
+                openProfileModal();
+                showToast("Por favor selecciona un perfil primero");
+                return;
+            }
 
             emulatorState.romName = file.name;
             const reader = new FileReader();
@@ -519,7 +474,6 @@
                 emulatorState.romBuffer = e.target.result;
                 emulatorState.romLoaded = true;
 
-                // Auto-detectar consola según extensión
                 const ext = file.name.split('.').pop().toLowerCase();
                 if (ext === 'gba') changeConsoleMode('gba');
                 else if (ext === 'gb') changeConsoleMode('gb');
@@ -529,7 +483,7 @@
                 canvas.classList.remove('hidden');
 
                 startRunningGame();
-                showToast(`¡ROM cargada para [${emulatorState.currentProfile}]: ${file.name}!`);
+                showToast(`¡ROM cargada con éxito para ${emulatorState.currentUser}!`);
             };
 
             reader.readAsArrayBuffer(file);
@@ -553,20 +507,20 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = '#ec4899';
-                ctx.font = '8px "Press Start 2P"';
+                ctx.font = '7px "Press Start 2P"';
                 ctx.fillText("GAYBOY EMULATOR", 8, 18);
-                
+
                 ctx.fillStyle = '#38bdf8';
-                ctx.fillText(emulatorState.romName.substring(0, 18), 8, 36);
+                ctx.fillText(emulatorState.romName.substring(0, 16), 8, 34);
 
                 ctx.fillStyle = '#10b981';
-                ctx.fillText(`USER: ${emulatorState.currentProfile}`, 8, 60);
+                ctx.fillText("USER: " + emulatorState.currentUser, 8, 54);
 
                 ctx.fillStyle = '#f59e0b';
-                ctx.fillText("CORE: 60 FPS (ACTIVE)", 8, 85);
-                
+                ctx.fillText("CORE: ACTIVE (60 FPS)", 8, 74);
+
                 ctx.fillStyle = '#a855f7';
-                ctx.fillText("MODE: " + emulatorState.consoleMode.toUpperCase(), 8, 105);
+                ctx.fillText("MODE: " + emulatorState.consoleMode.toUpperCase(), 8, 94);
 
                 emulatorState.animationFrameId = requestAnimationFrame(runEmulatorLoop);
             }
@@ -585,47 +539,38 @@
             body.className = "w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between ";
 
             if (mode === 'gb') {
-                body.classList.add('console-gb');
-                label.textContent = "GAME BOY";
+                body.classList.add('console-gb'); label.textContent = "GAME BOY";
                 lcd.className = "lcd-gb w-full h-full relative flex items-center justify-center";
                 shoulders.classList.add('hidden');
             } else if (mode === 'gbc') {
-                body.classList.add('console-gbc');
-                label.textContent = "GAME BOY COLOR";
+                body.classList.add('console-gbc'); label.textContent = "GAME BOY COLOR";
                 lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
                 shoulders.classList.add('hidden');
             } else if (mode === 'gba') {
-                body.classList.add('console-gba');
-                label.textContent = "GAME BOY ADVANCE";
+                body.classList.add('console-gba'); label.textContent = "GAME BOY ADVANCE";
                 lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
                 shoulders.classList.remove('hidden');
             }
 
-            if (emulatorState.romLoaded) {
-                startRunningGame();
-            }
+            if (emulatorState.romLoaded) startRunningGame();
         }
 
-        // Sincronización Google Drive / Nube por Perfil y Juego
+        // Guardado Aislado por Usuario y Juego en Nube / Drive
         function saveToCloud() {
             if (!emulatorState.romLoaded) { showToast("Carga un juego primero"); return; }
-            if (!emulatorState.currentProfile) { openProfileModal(); return; }
-
-            const key = `gayboy_cloud_${emulatorState.currentProfile}_${emulatorState.romName}`;
-            localStorage.setItem(key, JSON.stringify({timestamp: Date.now(), mode: emulatorState.consoleMode}));
-            showToast(`¡Save de ${emulatorState.romName} guardado en Google Drive (${emulatorState.currentProfile}/)!`);
+            const saveKey = `drive_save_${emulatorState.currentUser}_${emulatorState.romName}`;
+            localStorage.setItem(saveKey, JSON.stringify({timestamp: Date.now(), mode: emulatorState.consoleMode}));
+            showToast(`¡Partida guardada en Google Drive (${emulatorState.currentUser})!`);
         }
 
         function loadFromCloud() {
             if (!emulatorState.romLoaded) { showToast("Carga un juego primero"); return; }
-            if (!emulatorState.currentProfile) { openProfileModal(); return; }
-
-            const key = `gayboy_cloud_${emulatorState.currentProfile}_${emulatorState.romName}`;
-            const saved = localStorage.getItem(key);
+            const saveKey = `drive_save_${emulatorState.currentUser}_${emulatorState.romName}`;
+            const saved = localStorage.getItem(saveKey);
             if (saved) {
-                showToast(`¡Save cargado desde Google Drive para ${emulatorState.currentProfile}!`);
+                showToast(`¡Partida de ${emulatorState.currentUser} cargada con éxito!`);
             } else {
-                showToast("No hay registros en la nube para este usuario y juego");
+                showToast("No hay guardados previos para este usuario en este juego");
             }
         }
 
@@ -634,7 +579,7 @@
             const blob = new Blob([emulatorState.romBuffer], {type: "application/octet-stream"});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = emulatorState.romName.replace(/\.[^/.]+$/, "") + `_${emulatorState.currentProfile}.sav`;
+            a.download = `${emulatorState.currentUser}_${emulatorState.romName.replace(/\.[^/.]+$/, "")}.sav`;
             a.click();
             showToast("Archivo .SAV exportado");
         }
@@ -647,12 +592,9 @@
         }
 
         function handleButton(btn, isPressed) {
-            if (isPressed) {
-                console.log(`Botón pulsado: ${btn}`);
-            }
+            if (isPressed) console.log(`Botón: ${btn}`);
         }
 
-        // Mapeo de Teclado PC
         window.addEventListener('keydown', (e) => {
             const map = { 'ArrowUp': 'UP', 'ArrowDown': 'DOWN', 'ArrowLeft': 'LEFT', 'ArrowRight': 'RIGHT', 'z': 'A', 'x': 'B', 'Enter': 'START', 'Shift': 'SELECT' };
             if (map[e.key]) handleButton(map[e.key], true);
@@ -671,7 +613,7 @@
             }, 3000);
         }
 
-        initProfiles();
+        checkInitialProfile();
         initLink();
     </script>
 </body>
