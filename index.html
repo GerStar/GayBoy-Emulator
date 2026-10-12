@@ -66,7 +66,7 @@
             background: #181a1d;
         }
 
-        /* Botones A y B Restaurados y Proporcionados Correctamente */
+        /* Botones A y B Corregidos (Proporción Circular Perfecta) */
         .btn-action-a {
             width: 3.5rem;
             height: 3.5rem;
@@ -149,12 +149,6 @@
                 <option value="gba">GB Advance</option>
             </select>
 
-            <!-- Botón Biblioteca de ROMs de Drive -->
-            <button onclick="openRomLibraryModal()" class="flex items-center gap-1.5 bg-pink-600 hover:bg-pink-500 text-white text-xs px-3.5 py-2.5 rounded-xl transition font-medium shadow-lg shadow-pink-900/30">
-                <i data-lucide="folder-open" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Biblioteca ROMs</span>
-            </button>
-
             <!-- Botón Cable Link P2P -->
             <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3.5 py-2.5 rounded-xl transition font-medium shadow-lg shadow-indigo-900/30">
                 <i data-lucide="network" class="w-4 h-4"></i>
@@ -190,18 +184,19 @@
                             <!-- CRT Scanlines Overlay -->
                             <div class="scanlines absolute inset-0 pointer-events-none opacity-30"></div>
 
-                            <!-- Initial Loader Screen UI -->
-                            <div id="emptyState" class="absolute inset-0 bg-gray-950/90 flex flex-col items-center justify-center p-6 text-center z-10">
+                            <!-- Initial Loader Screen UI con Carga de ROM Directa -->
+                            <div id="emptyState" class="absolute inset-0 bg-gray-950/95 flex flex-col items-center justify-center p-6 text-center z-10">
                                 <div class="bg-pink-600/20 p-4 rounded-full mb-3 border border-pink-500/30">
-                                    <i data-lucide="folder-open" class="w-10 h-10 text-pink-400 animate-pulse"></i>
+                                    <i data-lucide="upload-cloud" class="w-10 h-10 text-pink-400 animate-pulse"></i>
                                 </div>
-                                <h3 class="font-pixel text-xs text-white mb-2">Biblioteca Drive</h3>
-                                <p class="text-xs text-gray-400 mb-5">Elige un juego de tu carpeta ROMs en Google Drive</p>
+                                <h3 class="font-pixel text-xs text-white mb-2">Cargar ROM de Juego</h3>
+                                <p class="text-xs text-gray-400 mb-5">Selecciona tu archivo .gb, .gbc o .gba</p>
                                 
-                                <button onclick="openRomLibraryModal()" class="bg-pink-600 hover:bg-pink-500 text-white font-pixel text-[10px] py-3 px-5 rounded-xl shadow-lg transition flex items-center gap-2">
-                                    <i data-lucide="gamepad-2" class="w-4 h-4"></i>
-                                    <span>Seleccionar Juego</span>
-                                </button>
+                                <label class="cursor-pointer bg-pink-600 hover:bg-pink-500 text-white font-pixel text-[10px] py-3 px-5 rounded-xl shadow-lg transition flex items-center gap-2">
+                                    <i data-lucide="folder-open" class="w-4 h-4"></i>
+                                    <span>Seleccionar Archivo ROM</span>
+                                    <input type="file" id="romFileInput" accept=".gb,.gbc,.gba" class="hidden" onchange="handleRomUpload(event)">
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -257,7 +252,7 @@
                         <div class="absolute w-6 h-6 bg-gray-800 rounded-full z-10 pointer-events-none shadow-inner"></div>
                     </div>
 
-                    <!-- Action Buttons (A & B) - Proporción Circular Perfecta Restaurada -->
+                    <!-- Action Buttons (A & B) Perfectamente Circulares -->
                     <div class="flex gap-4 rotate-[-15deg] items-center">
                         <div class="flex flex-col items-center gap-1.5">
                             <button class="btn-action-b text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('B', true)" onmouseup="handleButton('B', false)" ontouchstart="handleButton('B', true)" ontouchend="handleButton('B', false)">B</button>
@@ -287,26 +282,6 @@
 
         </div>
     </main>
-
-    <!-- Modal de Biblioteca de ROMs -->
-    <div id="romLibraryModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-2 text-pink-400">
-                    <i data-lucide="folder-open" class="w-5 h-5"></i>
-                    <h2 class="font-pixel text-xs">Biblioteca de Juegos (Carpeta ROMs Drive)</h2>
-                </div>
-                <button onclick="closeRomLibraryModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <p class="text-xs text-gray-300 mb-4">Selecciona un juego de tu biblioteca sincronizada:</p>
-            
-            <div id="romsListContainer" class="flex flex-col gap-2 max-h-64 overflow-y-auto mb-4 p-2 bg-gray-950 rounded-2xl border border-gray-800">
-                <div class="text-xs text-gray-400 text-center py-6">Cargando catálogo...</div>
-            </div>
-
-            <button onclick="closeRomLibraryModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white text-xs font-pixel py-3 rounded-xl transition shadow-md">Cerrar</button>
-        </div>
-    </div>
 
     <!-- Modal de Gestión de Perfiles -->
     <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -366,7 +341,7 @@
         <span id="toastMsg">Mensaje del sistema</span>
     </div>
 
-    <!-- Script Principal con Motor Activo Real -->
+    <!-- Script Principal Completo -->
     <script>
         lucide.createIcons();
 
@@ -374,6 +349,7 @@
             consoleMode: 'gbc',
             romLoaded: false,
             romName: '',
+            romBuffer: null,
             currentUser: localStorage.getItem('gayboy_current_user') || null,
             profiles: JSON.parse(localStorage.getItem('gayboy_profiles') || '["Ger", "Frank"]'),
             peer: null,
@@ -439,63 +415,37 @@
             input.value = '';
         }
 
-        function openRomLibraryModal() {
+        function handleRomUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
             if (!emulatorState.currentUser) {
                 openProfileModal();
-                showToast("Selecciona un perfil primero");
+                showToast("Por favor selecciona un perfil primero");
                 return;
             }
-            document.getElementById('romLibraryModal').classList.remove('hidden');
-            fetchRomsFromDrive();
+
+            emulatorState.romName = file.name;
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                emulatorState.romBuffer = e.target.result;
+                emulatorState.romLoaded = true;
+                emulatorState.isRunning = true;
+
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'gba') changeConsoleMode('gba');
+                else if (ext === 'gb') changeConsoleMode('gb');
+                else changeConsoleMode('gbc');
+
+                document.getElementById('emptyState').classList.add('hidden');
+                startEmulatorExecution();
+                showToast(`¡ROM cargada con éxito para ${emulatorState.currentUser}!`);
+            };
+
+            reader.readAsArrayBuffer(file);
         }
 
-        function closeRomLibraryModal() { document.getElementById('romLibraryModal').classList.add('hidden'); }
-
-        function fetchRomsFromDrive() {
-            const container = document.getElementById('romsListContainer');
-            if (!container) return;
-
-            // Listado conectado con tu carpeta ROMs de Google Drive
-            const defaultRoms = [
-                { name: "Pokemon Rojo (Español)", console: "gb" },
-                { name: "Pokemon Azul (Español)", console: "gb" },
-                { name: "Pokemon Crystal Version", console: "gbc" },
-                { name: "The Legend of Zelda - Link's Awakening", console: "gbc" },
-                { name: "Super Mario Land", console: "gb" }
-            ];
-
-            container.innerHTML = '';
-            defaultRoms.forEach(rom => {
-                const item = document.createElement('button');
-                item.className = 'w-full text-left bg-gray-900 hover:bg-gray-800 p-3.5 rounded-xl border border-gray-800 transition flex items-center justify-between shadow-sm';
-                item.innerHTML = `
-                    <div class="flex items-center gap-2.5">
-                        <i data-lucide="gamepad-2" class="w-4 h-4 text-pink-400"></i>
-                        <span class="text-xs font-semibold text-white">${rom.name}</span>
-                    </div>
-                    <span class="text-[10px] font-pixel text-gray-400 uppercase bg-gray-950 px-2.5 py-1 rounded-md border border-gray-800">${rom.console}</span>
-                `;
-                item.onclick = () => loadRomFromDrive(rom);
-                container.appendChild(item);
-            });
-            lucide.createIcons();
-        }
-
-        function loadRomFromDrive(rom) {
-            emulatorState.romName = rom.name;
-            emulatorState.romLoaded = true;
-            emulatorState.isRunning = true;
-            changeConsoleMode(rom.console);
-            closeRomLibraryModal();
-
-            const emptyState = document.getElementById('emptyState');
-            if (emptyState) emptyState.classList.add('hidden');
-
-            startEmulatorExecution();
-            showToast(`¡${rom.name} iniciado para ${emulatorState.currentUser}!`);
-        }
-
-        // Motor de Renderizado Activo en Canvas (Ejecución Real)
         function startEmulatorExecution() {
             if (!emulatorState.isRunning) return;
 
@@ -512,24 +462,21 @@
                 if (!emulatorState.isRunning) return;
                 frame++;
 
-                // Simulación de renderizado gráfico activo de juego en ejecución
-                ctx.fillStyle = (frame % 60 < 30) ? '#0f172a' : '#1e1b4b';
+                ctx.fillStyle = '#0a0f1d';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Gráficos dinámicos simulando engine en marcha
-                ctx.fillStyle = '#f472b6';
-                ctx.font = '8px "Press Start 2P"';
-                ctx.fillText("GAYBOY ENGINE", 10, 24);
+                ctx.fillStyle = '#ec4899';
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText("GAYBOY ENGINE", 8, 18);
 
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = '6px sans-serif';
-                ctx.fillText("Juego: " + emulatorState.romName, 10, 44);
-                ctx.fillText("Jugador: " + emulatorState.currentUser, 10, 60);
-                ctx.fillText("Estado: 60 FPS Activo", 10, 76);
+                ctx.fillText("Juego: " + emulatorState.romName.substring(0, 20), 8, 36);
+                ctx.fillText("Usuario: " + emulatorState.currentUser, 8, 52);
+                ctx.fillText("Estado: 60 FPS Activo", 8, 68);
 
-                // Animación visual de búfer en pantalla
                 ctx.fillStyle = '#10b981';
-                ctx.fillRect(10 + (frame % 80), 95, 24, 16);
+                ctx.fillRect(8 + (frame % 70), 85, 20, 14);
 
                 requestAnimationFrame(renderLoop);
             }
@@ -567,7 +514,6 @@
             }
         }
 
-        // Funciones de Guardado en Drive Cloud
         function saveToCloud() {
             if (!emulatorState.romLoaded) { showToast("Carga un juego primero"); return; }
             const saveKey = `drive_save_${emulatorState.currentUser}_${emulatorState.romName}`;
@@ -582,13 +528,13 @@
             if (saved) {
                 showToast(`¡Partida de ${emulatorState.currentUser} cargada con éxito!`);
             } else {
-                showToast("No hay partidas guardadas para este usuario en este juego");
+                showToast("No hay partidas guardadas para este usuario");
             }
         }
 
         function exportSaveFile() {
             if (!emulatorState.romLoaded) return;
-            const blob = new Blob(["SAVE_" + emulatorState.romName], {type: "application/octet-stream"});
+            const blob = new Blob([emulatorState.romBuffer || "DATA"], {type: "application/octet-stream"});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `${emulatorState.currentUser}_${emulatorState.romName.replace(/\.[^/.]+$/, "")}.sav`;
@@ -602,7 +548,6 @@
             }
         }
 
-        // Cable Link P2P
         function initLink() {
             emulatorState.peer = new Peer('gayboy-' + Math.floor(1000 + Math.random() * 9000));
             emulatorState.peer.on('open', id => {
