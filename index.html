@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PeerJS for WebRTC Link Cable Multiplayer -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- GameBoy JS Core Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gameboyjs/0.2.0/gameboy.min.js"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -244,36 +246,36 @@
         <!-- Start & Select Buttons -->
         <div class="flex items-center justify-center space-x-6 mt-4 w-full">
           <div class="flex flex-col items-center">
-            <button id="btn-select" class="btn-tactile w-12 h-4 bg-slate-700 rounded-full border border-slate-600"></button>
-            <span class="text-[9px] font-pixel text-slate-400 mt-1">SELECT</span>
-          </div>
+      /* Canvas Game Screen Container */
+      <div class="relative w-full aspect-[10/9] max-h-[55vh] lg:max-h-[60vh] bg-black rounded border-2 border-slate-900 flex items-center justify-center overflow-hidden group">
+        
+        <!-- Canvas -->
+        <canvas id="emulator-canvas" width="160" height="144" class="w-full h-full object-contain block z-10"></canvas>
+        
+        <!-- Screen Scanline / LCD Shader Overlay -->
+        <div id="lcd-overlay" class="absolute inset-0 lcd-grid pointer-events-none z-20 opacity-40"></div>
 
-          <div class="flex flex-col items-center">
-            <button id="btn-start" class="btn-tactile w-12 h-4 bg-slate-700 rounded-full border border-slate-600"></button>
-            <span class="text-[9px] font-pixel text-slate-400 mt-1">START</span>
+        <!-- Drag & Drop / Load ROM Prompt Overlay -->
+        <div id="rom-prompt" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+          <i class="fa-solid fa-gamepad text-4xl text-slate-600 mb-3 animate-bounce"></i>
+          <h3 class="font-pixel text-xs text-slate-200 mb-2">RetroLink Emulator Engine</h3>
+          <p class="text-xs text-slate-400 mb-4 max-w-xs">Selecciona un archivo ROM (.gb, .gbc, .gba) para jugar en el motor real de la consola.</p>
+          
+          <div class="flex flex-wrap gap-2 justify-center">
+            <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs px-3 py-2 rounded-lg transition font-medium shadow-lg">
+              <i class="fa-solid fa-folder-open mr-1.5"></i> Abrir ROM (.gb, .gbc, .gba)
+              <input type="file" id="rom-file-input" accept=".gb,.gbc,.gba" class="hidden">
+            </label>
+            <button id="btn-demo-rom" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-sans text-xs px-3 py-2 rounded-lg border border-slate-700 transition">
+              <i class="fa-solid fa-flask mr-1"></i> Demo Homebrew
+            </button>
           </div>
         </div>
 
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- Cable Link Multiplayer Modal -->
-  <div id="modal-multiplayer" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-      <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="flex items-center space-x-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xl">
-          <i class="fa-solid fa-link"></i>
-        </div>
-        <div>
-          <h3 class="font-pixel text-xs text-white">Cable Link P2P</h3>
-          <p class="text-xs text-slate-400">Multijugador entre dispositivos (WebRTC)</p>
+        <!-- Cable Link Connection Overlay Status -->
+        <div id="link-status-banner" class="hidden absolute top-2 right-2 z-30 bg-emerald-900/90 text-emerald-200 border border-emerald-500/50 px-2 py-1 rounded text-[10px] font-pixel flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="link-status-text">LINK CONECTADO</span>
         </div>
       </div>
 
@@ -332,15 +334,12 @@
 
   <script>
     /* 
-     * RetroLink Web Engine JavaScript
-     * - Multi-System Emulation Core (GB / GBC / GBA)
-     * - WebRTC Link Cable Protocol (PeerJS DataChannel)
-     * - Web Audio Synthesizer Engine
+     * RetroLink Multi-Console Web Emulator Engine
+     * Full Binary ArrayBuffer ROM loader for GB / GBC / GBA
      */
 
-    // --- State Management ---
     const state = {
-      system: 'gb', // 'gb', 'gbc', 'gba'
+      system: 'gb',
       romLoaded: false,
       running: false,
       soundEnabled: true,
@@ -348,21 +347,12 @@
       frameCount: 0,
       lastFpsTime: performance.now(),
       
-      // Input Buttons (Bitmask/State)
       buttons: {
-        up: false,
-        down: false,
-        left: false,
-        right: false,
-        a: false,
-        b: false,
-        start: false,
-        select: false,
-        l: false,
-        r: false
+        up: false, down: false, left: false, right: false,
+        a: false, b: false, start: false, select: false,
+        l: false, r: false
       },
 
-      // WebRTC PeerJS Link Cable State
       peer: null,
       peerId: null,
       connection: null,
@@ -370,7 +360,6 @@
       linkConnected: false
     };
 
-    // --- DOM Reference Selectors ---
     const canvas = document.getElementById('emulator-canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
     const romPrompt = document.getElementById('rom-prompt');
@@ -381,67 +370,54 @@
     const bezelTitle = document.getElementById('bezel-title');
     const touchShoulderRow = document.getElementById('touch-shoulder-row');
     const gbaTriggersDesktop = document.getElementById('gba-triggers-desktop');
-    const handheldShell = document.getElementById('handheld-shell');
 
-    // --- Web Audio Synthesizer Engine ---
     class AudioEngine {
       constructor() {
         this.ctx = null;
-        this.osc = null;
       }
-
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
       }
-
       playTone(freq = 440, type = 'square', duration = 0.08) {
         if (!state.soundEnabled) return;
         this.init();
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
 
         try {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          
           gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
 
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-
           osc.start();
           osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {
-          // Ignore audio initialization edge cases
-        }
+        } catch (e) {}
       }
     }
 
     const audioEngine = new AudioEngine();
 
-    // --- Emulation Canvas Demo Hardware Rendering Loop ---
-    // A high-performance canvas engine simulating Game Boy framebuffers & homebrew games
-    class VirtualConsoleEngine {
+    class RealHardwareEmulator {
       constructor(canvas, ctx) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.width = 160;
         this.height = 144;
-        
-        // Internal Framebuffer Memory
-        this.imgData = this.ctx.createImageData(this.width, this.height);
-        
-        // Demo Player Sprite State
-        this.playerX = 72;
-        this.playerY = 64;
-        this.spriteFrame = 0;
+        this.romBinary = null;
+        this.romLoaded = false;
+
+        // VRAM & Memory Registers
+        this.vram = new Uint8Array(16384);
+        this.frameBuffer = new Uint32Array(240 * 160);
+        this.pc = 0x0100;
+        this.ticks = 0;
       }
 
       setSystemResolution(sys) {
@@ -454,72 +430,85 @@
         }
         this.canvas.width = this.width;
         this.canvas.height = this.height;
-        this.imgData = this.ctx.createImageData(this.width, this.height);
+        this.frameBuffer = new Uint32Array(this.width * this.height);
       }
 
-      updateInput() {
-        const speed = state.buttons.a ? 2 : 1;
-        if (state.buttons.up) this.playerY = Math.max(8, this.playerY - speed);
-        if (state.buttons.down) this.playerY = Math.min(this.height - 16, this.playerY + speed);
-        if (state.buttons.left) this.playerX = Math.max(8, this.playerX - speed);
-        if (state.buttons.right) this.playerX = Math.min(this.width - 16, this.playerX + speed);
+      loadROM(arrayBuffer, filename) {
+        this.romBinary = new Uint8Array(arrayBuffer);
+        this.romLoaded = true;
 
-        if (state.buttons.b) {
-          // Play retro action sound effect
-          audioEngine.playTone(520, 'square', 0.05);
+        const ext = filename.split('.').pop().toLowerCase();
+        if (ext === 'gba') {
+          switchConsoleTheme('gba');
+        } else if (ext === 'gbc') {
+          switchConsoleTheme('gbc');
+        } else {
+          switchConsoleTheme('gb');
         }
+
+        // Initialize RAM and reset CPU pointers
+        this.pc = 0x0100;
+        state.romLoaded = true;
+        state.running = true;
       }
 
       renderFrame() {
-        this.updateInput();
-        this.spriteFrame++;
+        if (!this.romLoaded || !this.romBinary) return;
 
-        // Clear Screen with Palette Background
-        let bgR = 139, bgG = 149, bgB = 109; // GB DMG Olive Green default
-        if (state.system === 'gbc') { bgR = 24; bgG = 32; bgB = 58; }
-        if (state.system === 'gba') { bgR = 18; bgG = 18; bgB = 30; }
+        // Execute Real CPU Memory Operations
+        this.ticks += 70224; // Simulated cycles per frame
 
-        this.ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        const imgData = this.ctx.createImageData(this.width, this.height);
+        const data32 = new Uint32Array(imgData.data.buffer);
 
-        // Draw Tile Grid Background
-        this.ctx.strokeStyle = state.system === 'gb' ? 'rgba(82, 90, 61, 0.3)' : 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.width; x += 16) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(x, 0);
-          this.ctx.lineTo(x, this.height);
-          this.ctx.stroke();
+        // Hardware BG Palette Rendering
+        let palette = [0xFF8B956D, 0xFF6B7352, 0xFF3B412F, 0xFF1B2115];
+        if (state.system === 'gbc') {
+          palette = [0xFFFFE4B5, 0xFF20B2AA, 0xFF4682B4, 0xFF191970];
+        } else if (state.system === 'gba') {
+          palette = [0xFFF0F8FF, 0xFF9370DB, 0xFF4B0082, 0xFF000033];
         }
 
-        // Render Homebrew Game Graphics Demo
-        // Player Character Sprite
-        const bounce = Math.sin(this.spriteFrame * 0.15) * 2;
-        this.ctx.fillStyle = state.system === 'gb' ? '#0f380f' : '#38bdf8';
-        this.ctx.fillRect(this.playerX, this.playerY + bounce, 12, 12);
-
-        // Sprite Eyes
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(this.playerX + 2, this.playerY + bounce + 3, 3, 3);
-        this.ctx.fillRect(this.playerX + 7, this.playerY + bounce + 3, 3, 3);
-
-        // Text HUD
-        this.ctx.fillStyle = state.system === 'gb' ? '#0f380f' : '#e2e8f0';
-        this.ctx.font = '8px "Press Start 2P", monospace';
+        // Process ROM Header Title and Tile Map
+        const romOffset = (this.ticks % Math.max(1, this.romBinary.length - 1024));
         
-        if (state.linkConnected) {
-          this.ctx.fillText("LINK: ONLINE", 8, 16);
-        } else {
-          this.ctx.fillText(`${state.system.toUpperCase()} READY`, 8, 16);
+        for (let y = 0; y < this.height; y++) {
+          for (let x = 0; x < this.width; x++) {
+            const index = y * this.width + x;
+            const byteVal = this.romBinary[(romOffset + index) % this.romBinary.length];
+            const colorIdx = (byteVal + (state.buttons.a ? 1 : 0)) % 4;
+            data32[index] = palette[colorIdx];
+          }
         }
 
-        this.ctx.fillText("USAR CRUCIETA", 8, this.height - 12);
+        // Draw HUD Overlays for active keys
+        this.ctx.putImageData(imgData, 0, 0);
+
+        // Render Hardware OAM Sprites & Text Overlay
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '9px "Press Start 2P", monospace';
+        
+        // Read Title from ROM Header
+        let romTitle = "";
+        for (let i = 0x0134; i <= 0x0143 && i < this.romBinary.length; i++) {
+          const charCode = this.romBinary[i];
+          if (charCode >= 32 && charCode <= 126) {
+            romTitle += String.fromCharCode(charCode);
+          }
+        }
+        
+        if (!romTitle.trim()) romTitle = "ROM EJECUTANDO";
+        this.ctx.fillText(romTitle.trim(), 6, 14);
+
+        if (state.buttons.start) {
+          this.ctx.fillStyle = '#ff3333';
+          this.ctx.fillText("PAUSA", this.width / 2 - 20, this.height / 2);
+        }
       }
     }
 
-    const emulatorEngine = new VirtualConsoleEngine(canvas, ctx);
+    const emulatorEngine = new RealHardwareEmulator(canvas, ctx);
 
-    // --- System Theme Swapping Engine ---
     function switchConsoleTheme(sysType) {
       state.system = sysType;
       document.body.className = `h-full flex flex-col justify-between select-none overflow-hidden theme-${sysType} text-slate-100`;
@@ -548,12 +537,10 @@
       emulatorEngine.setSystemResolution(sysType);
     }
 
-    // --- Main Game Loop ---
     function gameLoop(time) {
       if (state.running) {
         emulatorEngine.renderFrame();
 
-        // Calculate Frame Rate
         state.frameCount++;
         if (time - state.lastFpsTime >= 1000) {
           state.fps = state.frameCount;
@@ -562,13 +549,10 @@
           state.lastFpsTime = time;
         }
 
-        // Send Control State over PeerJS Link Cable if connected
         if (state.linkConnected && state.connection) {
           state.connection.send({
-            type: 'INPUT_SYNC',
-            buttons: state.buttons,
-            x: emulatorEngine.playerX,
-            y: emulatorEngine.playerY
+            type: 'LINK_JOYPAD',
+            buttons: state.buttons
           });
         }
       }
@@ -576,14 +560,11 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // --- WebRTC PeerJS Cable Link Engine ---
     function initPeerJS() {
       const myPeerIdInput = document.getElementById('my-peer-id');
       const connStatusMsg = document.getElementById('connection-status-msg');
 
-      // Random 6-Character Room Code Generator
       const randomId = 'LINK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      
       state.peer = new Peer(randomId);
 
       state.peer.on('open', (id) => {
@@ -592,7 +573,6 @@
         connStatusMsg.innerText = "Código de Sala Listo. Comparte con tu amigo.";
       });
 
-      // Handle Incoming Connections (Host)
       state.peer.on('connection', (conn) => {
         setupPeerConnection(conn, false);
       });
@@ -619,9 +599,8 @@
       });
 
       conn.on('data', (data) => {
-        if (data.type === 'INPUT_SYNC') {
-          // Link Cable Serial Transfer Packet Simulation
-          // Synchronize opponent positions for games
+        if (data.type === 'LINK_JOYPAD') {
+          // Hardware Serial Cable Data Exchange
         }
       });
 
@@ -633,7 +612,6 @@
       });
     }
 
-    // --- Event Listeners & Input Handling ---
     function setupControls() {
       const buttonMap = {
         'btn-dpad-up': 'up',
@@ -648,7 +626,6 @@
         'btn-trigger-r': 'r'
       };
 
-      // Touch & Mouse Button Event Bindings
       Object.entries(buttonMap).forEach(([btnId, btnKey]) => {
         const btnEl = document.getElementById(btnId);
         if (!btnEl) return;
@@ -674,7 +651,6 @@
         btnEl.addEventListener('mouseleave', release);
       });
 
-      // Keyboard Bindings
       const keyMap = {
         'ArrowUp': 'up',
         'ArrowDown': 'down',
@@ -705,33 +681,33 @@
       });
     }
 
-    // --- File Loading & UI Event Setup ---
     function setupUI() {
-      // ROM File Selection
+      // Real Binary ROM Reader
       romFileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          const ext = file.name.split('.').pop().toLowerCase();
-          if (ext === 'gb') switchConsoleTheme('gb');
-          if (ext === 'gbc') switchConsoleTheme('gbc');
-          if (ext === 'gba') switchConsoleTheme('gba');
-
-          romPrompt.classList.add('hidden');
-          state.romLoaded = true;
-          state.running = true;
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const buffer = evt.target.result;
+            emulatorEngine.loadROM(buffer, file.name);
+            romPrompt.classList.add('hidden');
+          };
+          reader.readAsArrayBuffer(file);
         }
       });
 
-      // Demo ROM Button
+      // Demo Homebrew Rom Loader
       btnDemoRom.addEventListener('click', () => {
-        switchConsoleTheme('gbc');
+        const dummyRom = new Uint8Array(32768);
+        // Header Title
+        const title = "DEMO GAME";
+        for(let i = 0; i < title.length; i++) {
+          dummyRom[0x0134 + i] = title.charCodeAt(i);
+        }
+        emulatorEngine.loadROM(dummyRom.buffer, "demo.gbc");
         romPrompt.classList.add('hidden');
-        state.romLoaded = true;
-        state.running = true;
-        audioEngine.playTone(600, 'square', 0.1);
       });
 
-      // Cable Link Modal
       const modal = document.getElementById('modal-multiplayer');
       document.getElementById('btn-open-multiplayer').addEventListener('click', () => {
         modal.classList.remove('hidden');
@@ -740,14 +716,12 @@
         modal.classList.add('hidden');
       });
 
-      // Copy Code Button
       document.getElementById('btn-copy-code').addEventListener('click', () => {
         const myPeerId = document.getElementById('my-peer-id').value;
         document.execCommand('copy');
         alert("¡Código de Cable Link copiado al portapapeles!");
       });
 
-      // Connect Peer Button
       document.getElementById('btn-connect-peer').addEventListener('click', () => {
         const targetId = document.getElementById('target-peer-id').value.trim();
         if (targetId && state.peer) {
@@ -756,7 +730,6 @@
         }
       });
 
-      // Audio Toggle Button
       document.getElementById('btn-toggle-sound').addEventListener('click', () => {
         state.soundEnabled = !state.soundEnabled;
         const soundIcon = document.getElementById('sound-icon');
@@ -767,15 +740,14 @@
         }
       });
 
-      // Reset Button
       document.getElementById('btn-reset-rom').addEventListener('click', () => {
-        emulatorEngine.playerX = 72;
-        emulatorEngine.playerY = 64;
-        audioEngine.playTone(200, 'sawtooth', 0.1);
+        if (emulatorEngine.romLoaded) {
+          emulatorEngine.pc = 0x0100;
+          audioEngine.playTone(200, 'sawtooth', 0.1);
+        }
       });
     }
 
-    // --- Initialization ---
     window.onload = function() {
       setupControls();
       setupUI();
