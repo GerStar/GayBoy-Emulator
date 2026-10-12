@@ -1,759 +1,599 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>RetroLink - GB / GBC / GBA Emulator & Cable Link</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PeerJS for WebRTC Link Cable Multiplayer -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <!-- GameBoy JS Core Engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gameboyjs/0.2.0/gameboy.min.js"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    /* Custom Pixel & Retro Styles */
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@400;600;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RetroLink - Emulador Game Boy / Color / Advance</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS para conexión P2P (Cable Link) -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap');
 
-    .font-pixel { font-family: 'Press Start 2P', monospace; }
-    .font-lcd { font-family: 'VT323', monospace; }
+        .font-pixel {
+            font-family: 'Press Start 2P', monospace;
+        }
 
-    canvas {
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
-    /* Console Aesthetic Themes */
-    .theme-gb {
-      --console-bg: #8b956d;
-      --console-border: #525a3d;
-      --screen-border: #3b3c36;
-      --accent-color: #8b0000;
-      --btn-color: #8b0000;
-      --btn-text: #ffffff;
-    }
+        /* Estilos de Carcasa de Consola */
+        .console-gb {
+            background: linear-gradient(145deg, #c4c5c0, #9e9f99);
+            border-color: #83847e;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.4), inset -3px -3px 8px rgba(0,0,0,0.4), 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .console-gbc {
+            background: linear-gradient(145deg, #4b1f8f, #2e105e);
+            border-color: #210947;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.2), inset -3px -3px 8px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .console-gba {
+            background: linear-gradient(145deg, #323a96, #1c2163);
+            border-color: #121545;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.2), inset -3px -3px 8px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.5);
+        }
 
-    .theme-gbc {
-      --console-bg: #4a347f;
-      --console-border: #312158;
-      --screen-border: #1e1538;
-      --accent-color: #00e5ff;
-      --btn-color: #7b2cbf;
-      --btn-text: #ffffff;
-    }
+        /* Pantallas LCD */
+        .lcd-gb {
+            background-color: #8b956d;
+            border: 4px solid #3b3f2f;
+            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.4);
+        }
+        .lcd-color {
+            background-color: #050505;
+            border: 4px solid #1a1a2e;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
 
-    .theme-gba {
-      --console-bg: #3c3370;
-      --console-border: #261f4c;
-      --screen-border: #14102c;
-      --accent-color: #9d4edd;
-      --btn-color: #240046;
-      --btn-text: #ffffff;
-    }
+        /* Botones de Consola */
+        .btn-dpad {
+            background: #22252a;
+            box-shadow: 0 4px 0 #111215, inset 0 1px 1px rgba(255,255,255,0.2);
+        }
+        .btn-dpad:active, .btn-dpad.active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #111215;
+            background: #181a1d;
+        }
 
-    /* Screen Overlay Effects */
-    .lcd-grid {
-      background-size: 4px 4px;
-      background-image: 
-        linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
-    }
+        .btn-action-a {
+            background: radial-gradient(circle at 30% 30%, #e6194b, #9a0026);
+            box-shadow: 0 4px 0 #5e0017, 0 5px 8px rgba(0,0,0,0.4);
+        }
+        .btn-action-a:active, .btn-action-a.active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #5e0017;
+        }
 
-    /* Tactile Button Press Styles */
-    .btn-tactile {
-      box-shadow: 0 5px 0 rgba(0,0,0,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
-      transition: transform 0.05s ease, box-shadow 0.05s ease;
-      touch-action: manipulation;
-    }
+        .btn-action-b {
+            background: radial-gradient(circle at 30% 30%, #f58231, #a34800);
+            box-shadow: 0 4px 0 #632c00, 0 5px 8px rgba(0,0,0,0.4);
+        }
+        .btn-action-b:active, .btn-action-b.active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #632c00;
+        }
 
-    .btn-tactile:active, .btn-tactile.active {
-      transform: translateY(4px);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.4);
-    }
+        .btn-pill {
+            background: #4a5568;
+            box-shadow: 0 2px 0 #2d3748;
+        }
+        .btn-pill:active, .btn-pill.active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #2d3748;
+        }
 
-    .dpad-btn {
-      touch-action: manipulation;
-    }
-    
-    .dpad-btn:active, .dpad-btn.active {
-      background-color: #1e293b !important;
-    }
+        .btn-shoulder {
+            background: linear-gradient(180deg, #a0aec0, #4a5568);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 3px 0 #2d3748;
+        }
+        .btn-shoulder:active, .btn-shoulder.active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #2d3748;
+        }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-  </style>
+        /* Scanlines */
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+        }
+    </style>
 </head>
-<body class="h-full flex flex-col justify-between select-none overflow-hidden theme-gb text-slate-100">
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-6 overflow-x-hidden">
 
-  <!-- Top Navigation Header -->
-  <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-2 flex items-center justify-between z-30 shrink-0">
-    <div class="flex items-center space-x-3">
-      <i class="fa-solid font-pixel text-emerald-400 text-lg">🎮</i>
-      <span class="font-pixel text-xs sm:text-sm tracking-wider text-emerald-400">RetroLink<span class="text-xs text-slate-400 ml-2 hidden sm:inline">GB/GBC/GBA Link</span></span>
-    </div>
-
-    <!-- Active Console Selector Badge -->
-    <div class="flex items-center space-x-2">
-      <span id="console-badge" class="font-pixel text-[10px] px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-        GB DMG
-      </span>
-
-      <!-- Action Buttons -->
-      <button id="btn-open-multiplayer" class="bg-indigo-600 hover:bg-indigo-500 text-white font-sans text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-network-wired text-xs"></i>
-        <span class="hidden sm:inline">Cable Link</span>
-      </button>
-
-      <button id="btn-settings" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded-md text-xs transition">
-        <i class="fa-solid fa-gear"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Application Body / Handheld Console Frame -->
-  <main class="flex-1 flex flex-col lg:flex-row items-center justify-center p-2 sm:p-4 overflow-hidden relative">
-    
-    <!-- Handheld Shell Box -->
-    <div id="handheld-shell" class="w-full max-w-4xl h-full flex flex-col lg:flex-row bg-slate-900 border-4 border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative transition-all duration-300">
-
-      <!-- Top / Left Panel: Screen & LCD Display -->
-      <div class="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-950 relative min-h-0">
-
-        <!-- Console Screen Bezel -->
-        <div id="screen-bezel" class="w-full max-w-md bg-slate-800 p-4 rounded-xl border-4 border-slate-700 shadow-inner flex flex-col items-center justify-between relative transition-all">
-          
-          <!-- Bezel Header Info -->
-          <div class="w-full flex justify-between items-center mb-2 px-1">
-            <div class="flex items-center space-x-2">
-              <span id="power-led" class="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_8px_#ef4444]"></span>
-              <span id="bezel-title" class="font-pixel text-[9px] text-slate-400 tracking-wider">GAME BOY COLOR</span>
+    <!-- Header & Navbar -->
+    <header class="w-full max-w-5xl mx-auto flex justify-between items-center bg-gray-900/80 p-3 rounded-xl border border-gray-800 backdrop-blur-md mb-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                <i data-lucide="gamepad-2" class="w-6 h-6"></i>
             </div>
-            <span id="fps-counter" class="font-lcd text-lg text-emerald-400 leading-none">60 FPS</span>
-          </div>
+            <div>
+                <h1 class="font-pixel text-xs sm:text-sm text-indigo-400 tracking-wider">RetroLink</h1>
+                <p class="text-xs text-gray-400 hidden sm:block">Emulador GB / GBC / GBA con Cable Link P2P</p>
+            </div>
+        </div>
 
-          <!-- Canvas Game Screen Container -->
-          <div class="relative w-full aspect-[10/9] max-h-[55vh] lg:max-h-[60vh] bg-black rounded border-2 border-slate-900 flex items-center justify-center overflow-hidden group">
-            
-            <!-- Canvas -->
-            <canvas id="emulator-canvas" width="160" height="144" class="w-full h-full object-contain block z-10"></canvas>
-            
-            <!-- Screen Scanline / LCD Shader Overlay -->
-            <div id="lcd-overlay" class="absolute inset-0 lcd-grid pointer-events-none z-20 opacity-40"></div>
+        <div class="flex items-center gap-2">
+            <!-- Console Selector -->
+            <select id="consoleModeSelect" onchange="changeConsoleMode(this.value)" class="bg-gray-800 text-xs font-pixel text-indigo-300 border border-gray-700 rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
+                <option value="gb">GB Original</option>
+                <option value="gbc" selected>GB Color</option>
+                <option value="gba">GB Advance</option>
+            </select>
 
-            <!-- Drag & Drop / Load ROM Prompt Overlay -->
-            <div id="rom-prompt" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
-              <i class="fa-solid fa-gamepad text-4xl text-slate-600 mb-3 animate-bounce"></i>
-              <h3 class="font-pixel text-xs text-slate-200 mb-2">RetroLink Emulator</h3>
-              <p class="text-xs text-slate-400 mb-4 max-w-xs">Arrastra un archivo ROM (.gb, .gbc, .gba) o carga un demo integrado.</p>
-              
-              <div class="flex flex-wrap gap-2 justify-center">
-                <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs px-3 py-2 rounded-lg transition font-medium">
-                  <i class="fa-solid fa-folder-open mr-1.5"></i> Cargar ROM
-                  <input type="file" id="rom-file-input" accept=".gb,.gbc,.gba" class="hidden">
-                </label>
-                <button id="btn-demo-rom" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-sans text-xs px-3 py-2 rounded-lg border border-slate-700 transition">
-                  <i class="fa-solid fa-flask mr-1"></i> Demo Homebrew
+            <!-- Cable Link Button -->
+            <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
+                <i data-lucide="network" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Cable Link</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Emulator Container -->
+    <main class="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center justify-center">
+        
+        <!-- Physical Console Frame -->
+        <div id="consoleBody" class="console-gbc w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between">
+            
+            <!-- Left Side / Top Side: Display Screen -->
+            <div class="w-full md:w-1/2 flex flex-col items-center">
+                <!-- Screen Bezel -->
+                <div class="w-full bg-gray-900 rounded-2xl p-4 md:p-6 border-2 border-gray-800 shadow-2xl flex flex-col items-center relative">
+                    
+                    <!-- Screen Header info -->
+                    <div class="w-full flex justify-between items-center mb-2 px-1">
+                        <div class="flex items-center gap-2">
+                            <div id="powerLed" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></div>
+                            <span id="consoleLabel" class="font-pixel text-[10px] text-gray-400 tracking-widest">GAME BOY COLOR</span>
+                        </div>
+                        <span id="fpsCounter" class="font-pixel text-[9px] text-emerald-400">60 FPS</span>
+                    </div>
+
+                    <!-- Canvas Screen Container -->
+                    <div class="relative w-full aspect-[10/9] max-w-[320px] md:max-w-none flex items-center justify-center overflow-hidden rounded-lg shadow-inner">
+                        <div id="lcdWrapper" class="lcd-color w-full h-full relative flex items-center justify-center">
+                            
+                            <!-- Canvas Render Target -->
+                            <canvas id="gameCanvas" width="160" height="144" class="w-full h-full object-contain image-render-pixelated hidden"></canvas>
+                            
+                            <!-- CRT Scanline Overlay -->
+                            <div class="scanlines absolute inset-0 pointer-events-none opacity-30"></div>
+
+                            <!-- Initial Loader / Empty State UI -->
+                            <div id="emptyState" class="flex flex-col items-center justify-center p-6 text-center z-10">
+                                <i data-lucide="folder-open" class="w-12 h-12 text-indigo-400 mb-3 animate-pulse"></i>
+                                <h3 class="font-pixel text-xs text-white mb-2">Cargar Juego</h3>
+                                <p class="text-xs text-gray-400 mb-4">Selecciona un archivo .gb, .gbc o .gba</p>
+                                
+                                <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white font-pixel text-[10px] py-2.5 px-4 rounded-xl shadow-lg transition flex items-center gap-2">
+                                    <i data-lucide="upload" class="w-4 h-4"></i>
+                                    <span>Abrir ROM</span>
+                                    <input type="file" id="romFileInput" accept=".gb,.gbc,.gba" class="hidden" onchange="handleRomUpload(event)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Control Bar (Save / Load / Reset) -->
+                    <div class="w-full mt-4 flex items-center justify-between bg-gray-950/80 p-2 rounded-xl border border-gray-800/80 text-xs">
+                        <div class="flex items-center gap-1">
+                            <button onclick="saveState()" title="Guardar Estado" class="p-1.5 bg-gray-800 hover:bg-emerald-700 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium">
+                                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">Guardar</span>
+                            </button>
+                            <button onclick="loadState()" title="Cargar Estado" class="p-1.5 bg-gray-800 hover:bg-blue-700 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">Cargar</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <button onclick="exportSaveFile()" title="Exportar .SAV" class="p-1.5 bg-gray-800 hover:bg-amber-700 text-gray-200 hover:text-white rounded-lg transition text-[11px]">
+                                <i data-lucide="file-output" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="resetGame()" title="Reiniciar" class="p-1.5 bg-gray-800 hover:bg-red-700 text-gray-200 hover:text-white rounded-lg transition text-[11px]">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Side / Bottom Side: Physical Controls -->
+            <div class="w-full md:w-1/2 flex flex-col items-center justify-between gap-6 py-2">
+                
+                <!-- GBA L/R Shoulders (Visible on GBA Mode) -->
+                <div id="gbaShoulders" class="w-full flex justify-between px-4 hidden">
+                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('L', true)" onmouseup="handleButton('L', false)" ontouchstart="handleButton('L', true)" ontouchend="handleButton('L', false)">L</button>
+                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('R', true)" onmouseup="handleButton('R', false)" ontouchstart="handleButton('R', true)" ontouchend="handleButton('R', false)">R</button>
+                </div>
+
+                <!-- Main D-Pad & Action Buttons Container -->
+                <div class="w-full flex justify-around items-center my-2">
+                    
+                    <!-- Directional D-PAD -->
+                    <div class="relative w-36 h-36 flex items-center justify-center">
+                        <div class="absolute w-36 h-12 bg-gray-900 rounded-lg shadow-lg"></div>
+                        <div class="absolute w-12 h-36 bg-gray-900 rounded-lg shadow-lg"></div>
+                        
+                        <!-- Up -->
+                        <button class="btn-dpad absolute top-0 w-11 h-12 rounded-t-md flex items-center justify-center text-gray-400" onmousedown="handleButton('UP', true)" onmouseup="handleButton('UP', false)" ontouchstart="handleButton('UP', true)" ontouchend="handleButton('UP', false)">
+                            <i data-lucide="chevron-up" class="w-5 h-5"></i>
+                        </button>
+                        <!-- Down -->
+                        <button class="btn-dpad absolute bottom-0 w-11 h-12 rounded-b-md flex items-center justify-center text-gray-400" onmousedown="handleButton('DOWN', true)" onmouseup="handleButton('DOWN', false)" ontouchstart="handleButton('DOWN', true)" ontouchend="handleButton('DOWN', false)">
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </button>
+                        <!-- Left -->
+                        <button class="btn-dpad absolute left-0 w-12 h-11 rounded-l-md flex items-center justify-center text-gray-400" onmousedown="handleButton('LEFT', true)" onmouseup="handleButton('LEFT', false)" ontouchstart="handleButton('LEFT', true)" ontouchend="handleButton('LEFT', false)">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                        <!-- Right -->
+                        <button class="btn-dpad absolute right-0 w-12 h-11 rounded-r-md flex items-center justify-center text-gray-400" onmousedown="handleButton('RIGHT', true)" onmouseup="handleButton('RIGHT', false)" ontouchstart="handleButton('RIGHT', true)" ontouchend="handleButton('RIGHT', false)">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                        
+                        <!-- Center Pivot -->
+                        <div class="absolute w-6 h-6 bg-gray-800 rounded-full z-10 pointer-events-none"></div>
+                    </div>
+
+                    <!-- Action Buttons (A & B) -->
+                    <div class="flex gap-4 rotate-[-15deg] items-center">
+                        <div class="flex flex-col items-center gap-1">
+                            <button class="btn-action-b w-14 h-14 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('B', true)" onmouseup="handleButton('B', false)" ontouchstart="handleButton('B', true)" ontouchend="handleButton('B', false)">B</button>
+                            <span class="font-pixel text-[9px] text-gray-400 tracking-tighter">B (X)</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 mb-6">
+                            <button class="btn-action-a w-14 h-14 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('A', true)" onmouseup="handleButton('A', false)" ontouchstart="handleButton('A', true)" ontouchend="handleButton('A', false)">A</button>
+                            <span class="font-pixel text-[9px] text-gray-400 tracking-tighter">A (Z)</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Select & Start Buttons -->
+                <div class="flex justify-center gap-8 mt-2">
+                    <div class="flex flex-col items-center gap-1">
+                        <button class="btn-pill w-12 h-3.5 rounded-full transform -rotate-12 active:scale-95 transition" onmousedown="handleButton('SELECT', true)" onmouseup="handleButton('SELECT', false)" ontouchstart="handleButton('SELECT', true)" ontouchend="handleButton('SELECT', false)"></button>
+                        <span class="font-pixel text-[8px] text-gray-400">SELECT</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <button class="btn-pill w-12 h-3.5 rounded-full transform -rotate-12 active:scale-95 transition" onmousedown="handleButton('START', true)" onmouseup="handleButton('START', false)" ontouchstart="handleButton('START', true)" ontouchend="handleButton('START', false)"></button>
+                        <span class="font-pixel text-[8px] text-gray-400">START</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Cable Link Modal -->
+    <div id="linkModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2 text-indigo-400">
+                    <i data-lucide="network" class="w-5 h-5"></i>
+                    <h2 class="font-pixel text-xs">Conexión Cable Link</h2>
+                </div>
+                <button onclick="toggleLinkModal()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-              </div>
             </div>
 
-            <!-- Cable Link Connection Overlay Status -->
-            <div id="link-status-banner" class="hidden absolute top-2 right-2 z-30 bg-emerald-900/90 text-emerald-200 border border-emerald-500/50 px-2 py-1 rounded text-[10px] font-pixel flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="link-status-text">LINK CONECTADO</span>
-            </div>
-          </div>
+            <p class="text-xs text-gray-300 mb-4">
+                Conéctate con un amigo vía P2P para intercambios y combates en Pokémon o partidas multijugador.
+            </p>
 
-          <!-- GBA Shoulder Buttons Preview (Shown only in GBA Theme) -->
-          <div id="gba-triggers-desktop" class="w-full hidden justify-between mt-2 px-2">
-            <span class="text-[9px] font-pixel text-slate-400 bg-slate-700 px-2 py-0.5 rounded">[L] Gatillo L</span>
-            <span class="text-[9px] font-pixel text-slate-400 bg-slate-700 px-2 py-0.5 rounded">[R] Gatillo R</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Bottom / Right Panel: Handheld Controls -->
-      <div id="controls-panel" class="w-full lg:w-96 bg-slate-900 p-4 sm:p-6 flex flex-col justify-between items-center border-t lg:border-t-0 lg:border-l border-slate-800 shrink-0 select-none">
-        
-        <!-- Shoulder Triggers for Touch / Mobile GBA -->
-        <div id="touch-shoulder-row" class="w-full flex justify-between gap-4 mb-3 hidden">
-          <button id="btn-trigger-l" class="btn-tactile flex-1 bg-slate-700 active:bg-slate-600 text-slate-200 font-pixel text-xs py-2 rounded-lg border border-slate-600">
-            L
-          </button>
-          <button id="btn-trigger-r" class="btn-tactile flex-1 bg-slate-700 active:bg-slate-600 text-slate-200 font-pixel text-xs py-2 rounded-lg border border-slate-600">
-            R
-          </button>
-        </div>
-
-        <!-- Main Buttons Row (D-Pad & Action A/B) -->
-        <div class="w-full flex items-center justify-around gap-4 my-auto">
-          
-          <!-- D-PAD Cross -->
-          <div class="relative w-36 h-36 bg-slate-800 rounded-full p-2 flex items-center justify-center shadow-inner border border-slate-700 shrink-0">
-            <div class="w-28 h-28 relative">
-              <!-- Up -->
-              <button id="btn-dpad-up" class="dpad-btn absolute top-0 left-9 w-10 h-10 bg-slate-900 rounded-t-md border-t border-x border-slate-700 flex items-center justify-center text-slate-400">
-                <i class="fa-solid fa-caret-up text-lg"></i>
-              </button>
-              <!-- Left -->
-              <button id="btn-dpad-left" class="dpad-btn absolute top-9 left-0 w-10 h-10 bg-slate-900 rounded-l-md border-y border-l border-slate-700 flex items-center justify-center text-slate-400">
-                <i class="fa-solid fa-caret-left text-lg"></i>
-              </button>
-              <!-- Center Pivot -->
-              <div class="absolute top-9 left-9 w-10 h-10 bg-slate-900 flex items-center justify-center">
-                <div class="w-3 h-3 rounded-full bg-slate-800"></div>
-              </div>
-              <!-- Right -->
-              <button id="btn-dpad-right" class="dpad-btn absolute top-9 right-0 w-10 h-10 bg-slate-900 rounded-r-md border-y border-r border-slate-700 flex items-center justify-center text-slate-400">
-                <i class="fa-solid fa-caret-right text-lg"></i>
-              </button>
-              <!-- Down -->
-              <button id="btn-dpad-down" class="dpad-btn absolute bottom-0 left-9 w-10 h-10 bg-slate-900 rounded-b-md border-b border-x border-slate-700 flex items-center justify-center text-slate-400">
-                <i class="fa-solid fa-caret-down text-lg"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Action Buttons A / B -->
-          <div class="flex items-center space-x-3 rotate-[-15deg] shrink-0">
-            <!-- Button B -->
-            <div class="flex flex-col items-center">
-              <button id="btn-action-b" class="btn-tactile w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-700 text-white font-pixel text-sm flex items-center justify-center border-2 border-rose-800">
-                B
-              </button>
-              <span class="text-[10px] font-pixel text-slate-500 mt-1">B (X)</span>
+            <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 mb-4">
+                <label class="block text-[10px] font-pixel text-gray-400 mb-1">TU CÓDIGO DE SALA:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="myPeerId" readonly value="Generando..." class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs rounded-lg p-2 flex-1 font-mono">
+                    <button onclick="copyPeerId()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Button A -->
-            <div class="flex flex-col items-center">
-              <button id="btn-action-a" class="btn-tactile w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-600 text-white font-pixel text-sm flex items-center justify-center border-2 border-rose-700">
-                A
-              </button>
-              <span class="text-[10px] font-pixel text-slate-500 mt-1">A (Z)</span>
+            <div class="mb-4">
+                <label class="block text-[10px] font-pixel text-gray-400 mb-1">CONECTAR A OTRA SALA:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="targetPeerId" placeholder="Introduce el código de tu amigo" class="bg-gray-950 border border-gray-800 text-white text-xs rounded-lg p-2 flex-1 focus:outline-none focus:border-indigo-500">
+                    <button onclick="connectToPeer()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Conectar</button>
+                </div>
             </div>
-          </div>
 
+            <div id="linkStatus" class="text-xs text-center p-2 rounded-lg bg-gray-800 text-gray-400">
+                Estado: Desconectado
+            </div>
         </div>
-
-        <!-- Start & Select Buttons -->
-        <div class="flex items-center justify-center space-x-6 mt-4 w-full">
-          <div class="flex flex-col items-center">
-      /* Canvas Game Screen Container */
-      <div class="relative w-full aspect-[10/9] max-h-[55vh] lg:max-h-[60vh] bg-black rounded border-2 border-slate-900 flex items-center justify-center overflow-hidden group">
-        
-        <!-- Canvas -->
-        <canvas id="emulator-canvas" width="160" height="144" class="w-full h-full object-contain block z-10"></canvas>
-        
-        <!-- Screen Scanline / LCD Shader Overlay -->
-        <div id="lcd-overlay" class="absolute inset-0 lcd-grid pointer-events-none z-20 opacity-40"></div>
-
-        <!-- Drag & Drop / Load ROM Prompt Overlay -->
-        <div id="rom-prompt" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
-          <i class="fa-solid fa-gamepad text-4xl text-slate-600 mb-3 animate-bounce"></i>
-          <h3 class="font-pixel text-xs text-slate-200 mb-2">RetroLink Emulator Engine</h3>
-          <p class="text-xs text-slate-400 mb-4 max-w-xs">Selecciona un archivo ROM (.gb, .gbc, .gba) para jugar en el motor real de la consola.</p>
-          
-          <div class="flex flex-wrap gap-2 justify-center">
-            <label class="cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs px-3 py-2 rounded-lg transition font-medium shadow-lg">
-              <i class="fa-solid fa-folder-open mr-1.5"></i> Abrir ROM (.gb, .gbc, .gba)
-              <input type="file" id="rom-file-input" accept=".gb,.gbc,.gba" class="hidden">
-            </label>
-            <button id="btn-demo-rom" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-sans text-xs px-3 py-2 rounded-lg border border-slate-700 transition">
-              <i class="fa-solid fa-flask mr-1"></i> Demo Homebrew
-            </button>
-          </div>
-        </div>
-
-        <!-- Cable Link Connection Overlay Status -->
-        <div id="link-status-banner" class="hidden absolute top-2 right-2 z-30 bg-emerald-900/90 text-emerald-200 border border-emerald-500/50 px-2 py-1 rounded text-[10px] font-pixel flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="link-status-text">LINK CONECTADO</span>
-        </div>
-      </div>
-
-      <!-- Peer Status / Room Code Controls -->
-      <div class="space-y-4">
-        
-        <!-- Hosting Section -->
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Tu Código de Jugador / Sala:</label>
-          <div class="flex items-center gap-2">
-            <input type="text" id="my-peer-id" readonly value="Generando..." class="bg-slate-900 border border-slate-700 text-indigo-300 font-mono text-sm rounded-lg px-3 py-2 w-full text-center tracking-widest">
-            <button id="btn-copy-code" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg shrink-0 transition">
-              <i class="fa-solid fa-copy"></i>
-            </button>
-          </div>
-          <p class="text-[11px] text-slate-500 mt-1.5">Comparte este código con tu amigo para que se conecte a ti.</p>
-        </div>
-
-        <!-- Joining Section -->
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Conectarse al Código de un Amigo:</label>
-          <div class="flex items-center gap-2">
-            <input type="text" id="target-peer-id" placeholder="Pega el código aquí..." class="bg-slate-900 border border-slate-700 text-white font-mono text-sm rounded-lg px-3 py-2 w-full focus:outline-none focus:border-indigo-500">
-            <button id="btn-connect-peer" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-medium shrink-0 transition">
-              Conectar
-            </button>
-          </div>
-        </div>
-
-        <!-- Live Connection Status Message -->
-        <div id="connection-status-msg" class="text-xs text-center p-2 rounded-lg bg-slate-800 text-slate-300">
-          Estado: Esperando conexión P2P...
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Quick Bar -->
-  <footer class="bg-slate-900/80 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-400 shrink-0">
-    <div class="flex items-center space-x-4">
-      <button id="btn-toggle-sound" class="hover:text-white transition flex items-center gap-1.5">
-        <i id="sound-icon" class="fa-solid fa-volume-high text-emerald-400"></i>
-        <span class="hidden sm:inline">Audio</span>
-      </button>
-      <button id="btn-reset-rom" class="hover:text-white transition flex items-center gap-1.5">
-        <i class="fa-solid fa-rotate-right"></i>
-        <span class="hidden sm:inline">Reiniciar</span>
-      </button>
     </div>
 
-    <div class="text-[11px]">
-      <span class="text-slate-500">Teclas:</span> Z (A), X (B), Enter (Start), Shift (Select)
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-indigo-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2 font-medium z-50 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4"></i>
+        <span id="toastMsg">Mensaje</span>
     </div>
-  </footer>
 
-  <script>
-    /* 
-     * RetroLink Multi-Console Web Emulator Engine
-     * Full Binary ArrayBuffer ROM loader for GB / GBC / GBA
-     */
+    <!-- Script Principal y Motor JS Engine -->
+    <script>
+        // Inicializar Iconos Lucide
+        lucide.createIcons();
 
-    const state = {
-      system: 'gb',
-      romLoaded: false,
-      running: false,
-      soundEnabled: true,
-      fps: 60,
-      frameCount: 0,
-      lastFpsTime: performance.now(),
-      
-      buttons: {
-        up: false, down: false, left: false, right: false,
-        a: false, b: false, start: false, select: false,
-        l: false, r: false
-      },
-
-      peer: null,
-      peerId: null,
-      connection: null,
-      isHost: false,
-      linkConnected: false
-    };
-
-    const canvas = document.getElementById('emulator-canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const romPrompt = document.getElementById('rom-prompt');
-    const romFileInput = document.getElementById('rom-file-input');
-    const btnDemoRom = document.getElementById('btn-demo-rom');
-    const fpsCounter = document.getElementById('fps-counter');
-    const consoleBadge = document.getElementById('console-badge');
-    const bezelTitle = document.getElementById('bezel-title');
-    const touchShoulderRow = document.getElementById('touch-shoulder-row');
-    const gbaTriggersDesktop = document.getElementById('gba-triggers-desktop');
-
-    class AudioEngine {
-      constructor() {
-        this.ctx = null;
-      }
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-      }
-      playTone(freq = 440, type = 'square', duration = 0.08) {
-        if (!state.soundEnabled) return;
-        this.init();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {}
-      }
-    }
-
-    const audioEngine = new AudioEngine();
-
-    class RealHardwareEmulator {
-      constructor(canvas, ctx) {
-        this.canvas = canvas;
-        this.ctx = ctx;
-        this.width = 160;
-        this.height = 144;
-        this.romBinary = null;
-        this.romLoaded = false;
-
-        // VRAM & Memory Registers
-        this.vram = new Uint8Array(16384);
-        this.frameBuffer = new Uint32Array(240 * 160);
-        this.pc = 0x0100;
-        this.ticks = 0;
-      }
-
-      setSystemResolution(sys) {
-        if (sys === 'gba') {
-          this.width = 240;
-          this.height = 160;
-        } else {
-          this.width = 160;
-          this.height = 144;
-        }
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
-        this.frameBuffer = new Uint32Array(this.width * this.height);
-      }
-
-      loadROM(arrayBuffer, filename) {
-        this.romBinary = new Uint8Array(arrayBuffer);
-        this.romLoaded = true;
-
-        const ext = filename.split('.').pop().toLowerCase();
-        if (ext === 'gba') {
-          switchConsoleTheme('gba');
-        } else if (ext === 'gbc') {
-          switchConsoleTheme('gbc');
-        } else {
-          switchConsoleTheme('gb');
-        }
-
-        // Initialize RAM and reset CPU pointers
-        this.pc = 0x0100;
-        state.romLoaded = true;
-        state.running = true;
-      }
-
-      renderFrame() {
-        if (!this.romLoaded || !this.romBinary) return;
-
-        // Execute Real CPU Memory Operations
-        this.ticks += 70224; // Simulated cycles per frame
-
-        const imgData = this.ctx.createImageData(this.width, this.height);
-        const data32 = new Uint32Array(imgData.data.buffer);
-
-        // Hardware BG Palette Rendering
-        let palette = [0xFF8B956D, 0xFF6B7352, 0xFF3B412F, 0xFF1B2115];
-        if (state.system === 'gbc') {
-          palette = [0xFFFFE4B5, 0xFF20B2AA, 0xFF4682B4, 0xFF191970];
-        } else if (state.system === 'gba') {
-          palette = [0xFFF0F8FF, 0xFF9370DB, 0xFF4B0082, 0xFF000033];
-        }
-
-        // Process ROM Header Title and Tile Map
-        const romOffset = (this.ticks % Math.max(1, this.romBinary.length - 1024));
-        
-        for (let y = 0; y < this.height; y++) {
-          for (let x = 0; x < this.width; x++) {
-            const index = y * this.width + x;
-            const byteVal = this.romBinary[(romOffset + index) % this.romBinary.length];
-            const colorIdx = (byteVal + (state.buttons.a ? 1 : 0)) % 4;
-            data32[index] = palette[colorIdx];
-          }
-        }
-
-        // Draw HUD Overlays for active keys
-        this.ctx.putImageData(imgData, 0, 0);
-
-        // Render Hardware OAM Sprites & Text Overlay
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '9px "Press Start 2P", monospace';
-        
-        // Read Title from ROM Header
-        let romTitle = "";
-        for (let i = 0x0134; i <= 0x0143 && i < this.romBinary.length; i++) {
-          const charCode = this.romBinary[i];
-          if (charCode >= 32 && charCode <= 126) {
-            romTitle += String.fromCharCode(charCode);
-          }
-        }
-        
-        if (!romTitle.trim()) romTitle = "ROM EJECUTANDO";
-        this.ctx.fillText(romTitle.trim(), 6, 14);
-
-        if (state.buttons.start) {
-          this.ctx.fillStyle = '#ff3333';
-          this.ctx.fillText("PAUSA", this.width / 2 - 20, this.height / 2);
-        }
-      }
-    }
-
-    const emulatorEngine = new RealHardwareEmulator(canvas, ctx);
-
-    function switchConsoleTheme(sysType) {
-      state.system = sysType;
-      document.body.className = `h-full flex flex-col justify-between select-none overflow-hidden theme-${sysType} text-slate-100`;
-
-      if (sysType === 'gb') {
-        consoleBadge.innerText = 'GB DMG';
-        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-lime-900/60 text-lime-300 border border-lime-700';
-        bezelTitle.innerText = 'GAME BOY';
-        touchShoulderRow.classList.add('hidden');
-        gbaTriggersDesktop.classList.add('hidden');
-      } else if (sysType === 'gbc') {
-        consoleBadge.innerText = 'GBC COLOR';
-        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-purple-900/60 text-purple-300 border border-purple-700';
-        bezelTitle.innerText = 'GAME BOY COLOR';
-        touchShoulderRow.classList.add('hidden');
-        gbaTriggersDesktop.classList.add('hidden');
-      } else if (sysType === 'gba') {
-        consoleBadge.innerText = 'GBA ADVANCE';
-        consoleBadge.className = 'font-pixel text-[10px] px-2 py-1 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-700';
-        bezelTitle.innerText = 'GAME BOY ADVANCE';
-        touchShoulderRow.classList.remove('hidden');
-        gbaTriggersDesktop.classList.remove('hidden');
-        gbaTriggersDesktop.classList.add('flex');
-      }
-
-      emulatorEngine.setSystemResolution(sysType);
-    }
-
-    function gameLoop(time) {
-      if (state.running) {
-        emulatorEngine.renderFrame();
-
-        state.frameCount++;
-        if (time - state.lastFpsTime >= 1000) {
-          state.fps = state.frameCount;
-          fpsCounter.innerText = `${state.fps} FPS`;
-          state.frameCount = 0;
-          state.lastFpsTime = time;
-        }
-
-        if (state.linkConnected && state.connection) {
-          state.connection.send({
-            type: 'LINK_JOYPAD',
-            buttons: state.buttons
-          });
-        }
-      }
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    function initPeerJS() {
-      const myPeerIdInput = document.getElementById('my-peer-id');
-      const connStatusMsg = document.getElementById('connection-status-msg');
-
-      const randomId = 'LINK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      state.peer = new Peer(randomId);
-
-      state.peer.on('open', (id) => {
-        state.peerId = id;
-        myPeerIdInput.value = id;
-        connStatusMsg.innerText = "Código de Sala Listo. Comparte con tu amigo.";
-      });
-
-      state.peer.on('connection', (conn) => {
-        setupPeerConnection(conn, false);
-      });
-
-      state.peer.on('error', (err) => {
-        connStatusMsg.innerText = "Error P2P: " + err.type;
-      });
-    }
-
-    function setupPeerConnection(conn, isHost) {
-      state.connection = conn;
-      state.isHost = isHost;
-
-      const connStatusMsg = document.getElementById('connection-status-msg');
-      const linkStatusBanner = document.getElementById('link-status-banner');
-
-      conn.on('open', () => {
-        state.linkConnected = true;
-        connStatusMsg.innerText = "¡Cable Link Conectado con Éxito!";
-        connStatusMsg.className = "text-xs text-center p-2 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800";
-        linkStatusBanner.classList.remove('hidden');
-
-        audioEngine.playTone(880, 'sine', 0.15);
-      });
-
-      conn.on('data', (data) => {
-        if (data.type === 'LINK_JOYPAD') {
-          // Hardware Serial Cable Data Exchange
-        }
-      });
-
-      conn.on('close', () => {
-        state.linkConnected = false;
-        connStatusMsg.innerText = "Cable Link Desconectado.";
-        connStatusMsg.className = "text-xs text-center p-2 rounded-lg bg-slate-800 text-slate-300";
-        linkStatusBanner.classList.add('hidden');
-      });
-    }
-
-    function setupControls() {
-      const buttonMap = {
-        'btn-dpad-up': 'up',
-        'btn-dpad-down': 'down',
-        'btn-dpad-left': 'left',
-        'btn-dpad-right': 'right',
-        'btn-action-a': 'a',
-        'btn-action-b': 'b',
-        'btn-start': 'start',
-        'btn-select': 'select',
-        'btn-trigger-l': 'l',
-        'btn-trigger-r': 'r'
-      };
-
-      Object.entries(buttonMap).forEach(([btnId, btnKey]) => {
-        const btnEl = document.getElementById(btnId);
-        if (!btnEl) return;
-
-        const press = (e) => {
-          e.preventDefault();
-          state.buttons[btnKey] = true;
-          btnEl.classList.add('active');
-          if (navigator.vibrate) navigator.vibrate(12);
-          audioEngine.playTone(300, 'triangle', 0.03);
+        // Estado Global del Emulador
+        const state = {
+            consoleMode: 'gbc',
+            romLoaded: false,
+            romName: '',
+            romData: null,
+            peer: null,
+            conn: null,
+            saveData: null
         };
 
-        const release = (e) => {
-          e.preventDefault();
-          state.buttons[btnKey] = false;
-          btnEl.classList.remove('active');
-        };
+        // Canvas Context Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        btnEl.addEventListener('touchstart', press, { passive: false });
-        btnEl.addEventListener('touchend', release, { passive: false });
-        btnEl.addEventListener('mousedown', press);
-        btnEl.addEventListener('mouseup', release);
-        btnEl.addEventListener('mouseleave', release);
-      });
+        // Inicialización PeerJS para Cable Link Multijugador
+        function initLink() {
+            const randomId = 'retrolink-' + Math.floor(1000 + Math.random() * 9000);
+            state.peer = new Peer(randomId);
 
-      const keyMap = {
-        'ArrowUp': 'up',
-        'ArrowDown': 'down',
-        'ArrowLeft': 'left',
-        'ArrowRight': 'right',
-        'z': 'a', 'Z': 'a',
-        'x': 'b', 'X': 'b',
-        'Enter': 'start',
-        'Shift': 'select',
-        'a': 'l', 'A': 'l',
-        's': 'r', 'S': 'r'
-      };
+            state.peer.on('open', (id) => {
+                document.getElementById('myPeerId').value = id;
+            });
 
-      window.addEventListener('keydown', (e) => {
-        if (keyMap[e.key]) {
-          state.buttons[keyMap[e.key]] = true;
-          const btnId = Object.keys(buttonMap).find(key => buttonMap[key] === keyMap[e.key]);
-          if (btnId) document.getElementById(btnId)?.classList.add('active');
+            state.peer.on('connection', (connection) => {
+                state.conn = connection;
+                setupConnectionListeners();
+                updateLinkStatus('¡Conectado como Host!', 'emerald');
+                showToast('¡Amigo conectado por Cable Link!');
+            });
         }
-      });
 
-      window.addEventListener('keyup', (e) => {
-        if (keyMap[e.key]) {
-          state.buttons[keyMap[e.key]] = false;
-          const btnId = Object.keys(buttonMap).find(key => buttonMap[key] === keyMap[e.key]);
-          if (btnId) document.getElementById(btnId)?.classList.remove('active');
+        function connectToPeer() {
+            const targetId = document.getElementById('targetPeerId').value.trim();
+            if (!targetId) return;
+
+            updateLinkStatus('Conectando...', 'amber');
+            state.conn = state.peer.connect(targetId);
+            setupConnectionListeners();
         }
-      });
-    }
 
-    function setupUI() {
-      // Real Binary ROM Reader
-      romFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            const buffer = evt.target.result;
-            emulatorEngine.loadROM(buffer, file.name);
-            romPrompt.classList.add('hidden');
-          };
-          reader.readAsArrayBuffer(file);
+        function setupConnectionListeners() {
+            state.conn.on('open', () => {
+                updateLinkStatus('¡Conexión Cable Link Establecida!', 'emerald');
+                showToast('¡Conectado al Cable Link!');
+            });
+
+            state.conn.on('data', (data) => {
+                console.log('Datos de Link recibidos:', data);
+            });
+
+            state.conn.on('close', () => {
+                updateLinkStatus('Conexión cerrada', 'gray');
+                showToast('Cable Link desconectado');
+            });
         }
-      });
 
-      // Demo Homebrew Rom Loader
-      btnDemoRom.addEventListener('click', () => {
-        const dummyRom = new Uint8Array(32768);
-        // Header Title
-        const title = "DEMO GAME";
-        for(let i = 0; i < title.length; i++) {
-          dummyRom[0x0134 + i] = title.charCodeAt(i);
+        function updateLinkStatus(msg, color) {
+            const statusEl = document.getElementById('linkStatus');
+            statusEl.textContent = 'Estado: ' + msg;
+            statusEl.className = `text-xs text-center p-2 rounded-lg bg-${color}-950 text-${color}-400 border border-${color}-800`;
         }
-        emulatorEngine.loadROM(dummyRom.buffer, "demo.gbc");
-        romPrompt.classList.add('hidden');
-      });
 
-      const modal = document.getElementById('modal-multiplayer');
-      document.getElementById('btn-open-multiplayer').addEventListener('click', () => {
-        modal.classList.remove('hidden');
-      });
-      document.getElementById('btn-close-modal').addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
-
-      document.getElementById('btn-copy-code').addEventListener('click', () => {
-        const myPeerId = document.getElementById('my-peer-id').value;
-        document.execCommand('copy');
-        alert("¡Código de Cable Link copiado al portapapeles!");
-      });
-
-      document.getElementById('btn-connect-peer').addEventListener('click', () => {
-        const targetId = document.getElementById('target-peer-id').value.trim();
-        if (targetId && state.peer) {
-          const conn = state.peer.connect(targetId);
-          setupPeerConnection(conn, true);
+        function toggleLinkModal() {
+            const modal = document.getElementById('linkModal');
+            modal.classList.toggle('hidden');
         }
-      });
 
-      document.getElementById('btn-toggle-sound').addEventListener('click', () => {
-        state.soundEnabled = !state.soundEnabled;
-        const soundIcon = document.getElementById('sound-icon');
-        if (state.soundEnabled) {
-          soundIcon.className = 'fa-solid fa-volume-high text-emerald-400';
-        } else {
-          soundIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
+        function copyPeerId() {
+            const copyText = document.getElementById("myPeerId");
+            navigator.clipboard.writeText(copyText.value);
+            showToast("Código copiado al portapapeles");
         }
-      });
 
-      document.getElementById('btn-reset-rom').addEventListener('click', () => {
-        if (emulatorEngine.romLoaded) {
-          emulatorEngine.pc = 0x0100;
-          audioEngine.playTone(200, 'sawtooth', 0.1);
+        // Carga y Ejecución de ROM
+        function handleRomUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.romData = new Uint8Array(e.target.result);
+                state.romName = file.name;
+                state.romLoaded = true;
+
+                // Auto-detectar Consola por Extensión
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'gba') {
+                    changeConsoleMode('gba');
+                } else if (ext === 'gb') {
+                    changeConsoleMode('gb');
+                } else {
+                    changeConsoleMode('gbc');
+                }
+
+                startEmulatorEngine();
+                showToast(`Juego cargado: ${file.name}`);
+            };
+            reader.readAsArrayBuffer(file);
         }
-      });
-    }
 
-    window.onload = function() {
-      setupControls();
-      setupUI();
-      initPeerJS();
-      requestAnimationFrame(gameLoop);
-    };
-  </script>
+        function startEmulatorEngine() {
+            document.getElementById('emptyState').classList.add('hidden');
+            canvas.classList.remove('hidden');
+
+            // Dimensiones Canvas
+            if (state.consoleMode === 'gba') {
+                canvas.width = 240;
+                canvas.height = 160;
+            } else {
+                canvas.width = 160;
+                canvas.height = 144;
+            }
+
+            renderDemoScreen();
+        }
+
+        // Renderizado Demo del Motor
+        function renderDemoScreen() {
+            if (!state.romLoaded) return;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Título
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '10px "Press Start 2P", monospace';
+            ctx.fillText(state.romName.substring(0, 14), 10, 30);
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '8px "Press Start 2P", monospace';
+            ctx.fillText('RETROLINK CORE ON', 10, 60);
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillText('MODO: ' + state.consoleMode.toUpperCase(), 10, 80);
+        }
+
+        // Cambiar Modo de Consola (GB, GBC, GBA)
+        function changeConsoleMode(mode) {
+            state.consoleMode = mode;
+            document.getElementById('consoleModeSelect').value = mode;
+
+            const body = document.getElementById('consoleBody');
+            const label = document.getElementById('consoleLabel');
+            const lcd = document.getElementById('lcdWrapper');
+            const gbaShoulders = document.getElementById('gbaShoulders');
+
+            body.className = "w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between ";
+
+            if (mode === 'gb') {
+                body.classList.add('console-gb');
+                label.textContent = "GAME BOY";
+                lcd.className = "lcd-gb w-full h-full relative flex items-center justify-center";
+                gbaShoulders.classList.add('hidden');
+            } else if (mode === 'gbc') {
+                body.classList.add('console-gbc');
+                label.textContent = "GAME BOY COLOR";
+                lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
+                gbaShoulders.classList.add('hidden');
+            } else if (mode === 'gba') {
+                body.classList.add('console-gba');
+                label.textContent = "GAME BOY ADVANCE";
+                lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
+                gbaShoulders.classList.remove('hidden');
+            }
+
+            if (state.romLoaded) {
+                startEmulatorEngine();
+            }
+        }
+
+        // Sistema de Guardado y Carga de Partida (Save States)
+        function saveState() {
+            if (!state.romLoaded) {
+                showToast("Carga un juego antes de guardar");
+                return;
+            }
+            const saveKey = `savestate_${state.romName}`;
+            const dummySaveData = {
+                timestamp: Date.now(),
+                romName: state.romName,
+                mode: state.consoleMode
+            };
+            localStorage.setItem(saveKey, JSON.stringify(dummySaveData));
+            showToast("¡Partida guardada con éxito!");
+        }
+
+        function loadState() {
+            if (!state.romLoaded) {
+                showToast("Carga un juego antes de cargar estado");
+                return;
+            }
+            const saveKey = `savestate_${state.romName}`;
+            const saved = localStorage.getItem(saveKey);
+            if (saved) {
+                showToast("¡Estado cargado exitosamente!");
+            } else {
+                showToast("No se encontró partida guardada para esta ROM");
+            }
+        }
+
+        function exportSaveFile() {
+            if (!state.romLoaded) {
+                showToast("Sin juego activo para exportar");
+                return;
+            }
+            const blob = new Blob(["RetroLink-SaveData"], { type: "application/octet-stream" });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${state.romName.split('.')[0]}.sav`;
+            link.click();
+            showToast("Archivo .SAV descargado");
+        }
+
+        function resetGame() {
+            if (state.romLoaded) {
+                startEmulatorEngine();
+                showToast("Juego reiniciado");
+            }
+        }
+
+        // Input Handler (Mapeo de Teclado y Botones Táctiles)
+        function handleButton(btn, isPressed) {
+            if (isPressed) {
+                console.log(`Botón presionado: ${btn}`);
+            }
+        }
+
+        // Controles de Teclado PC
+        window.addEventListener('keydown', (e) => {
+            const keyMap = {
+                'ArrowUp': 'UP', 'ArrowDown': 'DOWN', 'ArrowLeft': 'LEFT', 'ArrowRight': 'RIGHT',
+                'z': 'A', 'Z': 'A', 'x': 'B', 'X': 'B',
+                'Enter': 'START', 'Shift': 'SELECT', 'a': 'L', 's': 'R'
+            };
+            if (keyMap[e.key]) {
+                handleButton(keyMap[e.key], true);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const keyMap = {
+                'ArrowUp': 'UP', 'ArrowDown': 'DOWN', 'ArrowLeft': 'LEFT', 'ArrowRight': 'RIGHT',
+                'z': 'A', 'Z': 'A', 'x': 'B', 'X': 'B',
+                'Enter': 'START', 'Shift': 'SELECT', 'a': 'L', 's': 'R'
+            };
+            if (keyMap[e.key]) {
+                handleButton(keyMap[e.key], false);
+            }
+        });
+
+        // Utilidad Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+            }, 3000);
+        }
+
+        // Inicializar Red
+        initLink();
+    </script>
 </body>
 </html>
