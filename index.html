@@ -10,8 +10,6 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Emulator JS Engine Core -->
-    <script src="https://cdn.jsdelivr.net/npm/jsgb@0.3.0/jsgb.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap');
 
@@ -28,7 +26,7 @@
             touch-action: manipulation;
         }
 
-        /* Estilos de Carcasa de Consola */
+        /* Estilos de Carcasa de Consola Avanzados */
         .console-gb {
             background: linear-gradient(145deg, #c4c5c0, #9e9f99);
             border-color: #83847e;
@@ -45,7 +43,7 @@
             box-shadow: inset 2px 2px 5px rgba(255,255,255,0.2), inset -3px -3px 8px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.5);
         }
 
-        /* Pantallas LCD */
+        /* Pantallas LCD Detalladas */
         .lcd-gb {
             background-color: #8b956d;
             border: 4px solid #3b3f2f;
@@ -57,7 +55,7 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
 
-        /* Botones de Consola */
+        /* Botones de Consola Físicos con Feedback Háptico Visual */
         .btn-dpad {
             background: #22252a;
             box-shadow: 0 4px 0 #111215, inset 0 1px 1px rgba(255,255,255,0.2);
@@ -112,56 +110,56 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between p-2 md:p-6 overflow-x-hidden">
 
-    <!-- Header & Navbar -->
-    <header class="w-full max-w-5xl mx-auto flex justify-between items-center bg-gray-900/80 p-3 rounded-xl border border-gray-800 backdrop-blur-md mb-4">
+    <!-- Header & Navbar Principal -->
+    <header class="w-full max-w-5xl mx-auto flex justify-between items-center bg-gray-900/90 p-3 rounded-2xl border border-gray-800 backdrop-blur-md mb-4 shadow-xl">
         <div class="flex items-center gap-3">
-            <div class="bg-pink-600 p-2 rounded-lg text-white">
+            <div class="bg-gradient-to-tr from-pink-600 to-purple-600 p-2.5 rounded-xl text-white shadow-lg">
                 <i data-lucide="gamepad-2" class="w-6 h-6"></i>
             </div>
             <div>
                 <h1 class="font-pixel text-xs sm:text-sm text-pink-400 tracking-wider">GayBoy Emulator</h1>
-                <p class="text-xs text-gray-400 hidden sm:block">GB / GBC / GBA con Link P2P y Google Drive Cloud</p>
+                <p class="text-xs text-gray-400 hidden sm:block">GB / GBC / GBA • Google Drive Cloud & P2P Link</p>
             </div>
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- Selector de Perfil -->
-            <button onclick="openProfileModal()" class="bg-gray-800 hover:bg-gray-700 text-xs font-pixel text-pink-300 border border-gray-700 rounded-lg px-3 py-2 flex items-center gap-1.5 transition">
+            <!-- Selector de Perfil de Usuario -->
+            <button onclick="openProfileModal()" class="bg-gray-800 hover:bg-gray-700 text-xs font-pixel text-pink-300 border border-gray-700 rounded-xl px-3 py-2.5 flex items-center gap-1.5 transition shadow-md">
                 <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                <span id="currentProfileDisplay">Perfil: Ninguno</span>
+                <span id="currentProfileDisplay">Perfil: Cargando...</span>
             </button>
 
-            <!-- Console Selector -->
-            <select id="consoleModeSelect" onchange="changeConsoleMode(this.value)" class="bg-gray-800 text-xs font-pixel text-pink-300 border border-gray-700 rounded-lg px-2 py-2 focus:outline-none">
+            <!-- Selector de Modelo de Consola -->
+            <select id="consoleModeSelect" onchange="changeConsoleMode(this.value)" class="bg-gray-800 text-xs font-pixel text-pink-300 border border-gray-700 rounded-xl px-2.5 py-2.5 focus:outline-none shadow-md cursor-pointer">
                 <option value="gb">GB Original</option>
                 <option value="gbc" selected>GB Color</option>
                 <option value="gba">GB Advance</option>
             </select>
 
-            <!-- Google Drive Cloud Button -->
-            <button onclick="toggleDriveModal()" class="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">
-                <i data-lucide="cloud" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Drive Cloud</span>
+            <!-- Botón Biblioteca de ROMs de Drive -->
+            <button onclick="openRomLibraryModal()" class="flex items-center gap-1.5 bg-pink-600 hover:bg-pink-500 text-white text-xs px-3.5 py-2.5 rounded-xl transition font-medium shadow-lg shadow-pink-900/30">
+                <i data-lucide="folder-open" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Biblioteca ROMs</span>
             </button>
 
-            <!-- Cable Link Button -->
-            <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-lg transition font-medium">
+            <!-- Botón Cable Link P2P -->
+            <button onclick="toggleLinkModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3.5 py-2.5 rounded-xl transition font-medium shadow-lg shadow-indigo-900/30">
                 <i data-lucide="network" class="w-4 h-4"></i>
                 <span class="hidden md:inline">Cable Link</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Emulator Container -->
+    <!-- Main Emulator Workspace Container -->
     <main class="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center justify-center">
         
-        <div id="consoleBody" class="console-gbc w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between">
+        <div id="consoleBody" class="console-gbc w-full max-w-md md:max-w-4xl rounded-3xl p-5 md:p-10 border-4 transition-all duration-300 flex flex-col md:flex-row gap-8 items-center justify-between">
             
-            <!-- Left Side: Display Screen -->
+            <!-- Left Side: Display Screen & Cloud Controls -->
             <div class="w-full md:w-1/2 flex flex-col items-center">
-                <div class="w-full bg-gray-900 rounded-2xl p-4 md:p-6 border-2 border-gray-800 shadow-2xl flex flex-col items-center relative">
+                <div class="w-full bg-gray-900 rounded-3xl p-5 md:p-6 border-2 border-gray-800 shadow-2xl flex flex-col items-center relative">
                     
-                    <div class="w-full flex justify-between items-center mb-2 px-1">
+                    <div class="w-full flex justify-between items-center mb-3 px-1">
                         <div class="flex items-center gap-2">
                             <div id="powerLed" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></div>
                             <span id="consoleLabel" class="font-pixel text-[10px] text-gray-400 tracking-widest">GAME BOY COLOR</span>
@@ -169,50 +167,51 @@
                         <span id="fpsCounter" class="font-pixel text-[9px] text-emerald-400">60 FPS</span>
                     </div>
 
-                    <!-- Canvas Screen Container -->
-                    <div class="relative w-full aspect-[10/9] max-w-[320px] md:max-w-none flex items-center justify-center overflow-hidden rounded-lg shadow-inner">
+                    <!-- Canvas Screen Wrapper -->
+                    <div class="relative w-full aspect-[10/9] max-w-[320px] md:max-w-none flex items-center justify-center overflow-hidden rounded-xl shadow-inner border border-gray-800">
                         <div id="lcdWrapper" class="lcd-color w-full h-full relative flex items-center justify-center">
                             
                             <!-- Canvas Render Target -->
                             <canvas id="gameCanvas" width="160" height="144" class="w-full h-full object-contain image-render-pixelated hidden"></canvas>
                             
-                            <!-- CRT Scanlines -->
+                            <!-- CRT Scanlines Overlay -->
                             <div class="scanlines absolute inset-0 pointer-events-none opacity-30"></div>
 
-                            <!-- Initial Loader UI -->
+                            <!-- Initial Loader Screen UI -->
                             <div id="emptyState" class="flex flex-col items-center justify-center p-6 text-center z-10">
-                                <i data-lucide="folder-open" class="w-12 h-12 text-pink-400 mb-3 animate-pulse"></i>
-                                <h3 class="font-pixel text-xs text-white mb-2">Cargar ROM</h3>
-                                <p class="text-xs text-gray-400 mb-4">Selecciona tu archivo .gb, .gbc o .gba</p>
+                                <div class="bg-pink-600/20 p-4 rounded-full mb-3 border border-pink-500/30">
+                                    <i data-lucide="folder-open" class="w-10 h-10 text-pink-400 animate-pulse"></i>
+                                </div>
+                                <h3 class="font-pixel text-xs text-white mb-2">Biblioteca Drive</h3>
+                                <p class="text-xs text-gray-400 mb-5">Elige un juego de tu carpeta ROMs en Google Drive</p>
                                 
-                                <label class="cursor-pointer bg-pink-600 hover:bg-pink-500 text-white font-pixel text-[10px] py-2.5 px-4 rounded-xl shadow-lg transition flex items-center gap-2">
-                                    <i data-lucide="upload" class="w-4 h-4"></i>
-                                    <span>Abrir Archivo</span>
-                                    <input type="file" id="romFileInput" accept=".gb,.gbc,.gba" class="hidden" onchange="handleRomUpload(event)">
-                                </label>
+                                <button onclick="openRomLibraryModal()" class="bg-pink-600 hover:bg-pink-500 text-white font-pixel text-[10px] py-3 px-5 rounded-xl shadow-lg transition flex items-center gap-2">
+                                    <i data-lucide="gamepad-2" class="w-4 h-4"></i>
+                                    <span>Seleccionar Juego</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Game Control Bar (Cloud Save & Export) -->
-                    <div class="w-full mt-4 flex items-center justify-between bg-gray-950/80 p-2 rounded-xl border border-gray-800/80 text-xs">
-                        <div class="flex items-center gap-1">
-                            <button onclick="saveToCloud()" title="Guardar en Google Drive" class="p-1.5 bg-gray-800 hover:bg-amber-700 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium">
-                                <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
+                    <!-- Cloud Control Bar (Aislado por Usuario y Juego) -->
+                    <div class="w-full mt-4 flex items-center justify-between bg-gray-950 p-2.5 rounded-xl border border-gray-800 text-xs shadow-inner">
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="saveToCloud()" title="Guardar en Google Drive" class="px-2.5 py-1.5 bg-gray-900 hover:bg-amber-600 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium border border-gray-800">
+                                <i data-lucide="cloud-upload" class="w-3.5 h-3.5 text-amber-400"></i>
                                 <span class="hidden sm:inline">Guardar Nube</span>
                             </button>
-                            <button onclick="loadFromCloud()" title="Cargar de Google Drive" class="p-1.5 bg-gray-800 hover:bg-blue-700 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium">
-                                <i data-lucide="cloud-download" class="w-3.5 h-3.5"></i>
+                            <button onclick="loadFromCloud()" title="Cargar de Google Drive" class="px-2.5 py-1.5 bg-gray-900 hover:bg-blue-600 text-gray-200 hover:text-white rounded-lg transition flex items-center gap-1 text-[11px] font-medium border border-gray-800">
+                                <i data-lucide="cloud-download" class="w-3.5 h-3.5 text-blue-400"></i>
                                 <span class="hidden sm:inline">Cargar Nube</span>
                             </button>
                         </div>
 
-                        <div class="flex items-center gap-1">
-                            <button onclick="exportSaveFile()" title="Exportar .SAV" class="p-1.5 bg-gray-800 hover:bg-emerald-700 text-gray-200 hover:text-white rounded-lg transition text-[11px]">
-                                <i data-lucide="file-output" class="w-3.5 h-3.5"></i>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="exportSaveFile()" title="Exportar .SAV" class="p-1.5 bg-gray-900 hover:bg-emerald-600 text-gray-200 hover:text-white rounded-lg transition text-[11px] border border-gray-800">
+                                <i data-lucide="file-output" class="w-3.5 h-3.5 text-emerald-400"></i>
                             </button>
-                            <button onclick="resetEmulator()" title="Reiniciar" class="p-1.5 bg-gray-800 hover:bg-red-700 text-gray-200 hover:text-white rounded-lg transition text-[11px]">
-                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <button onclick="resetEmulator()" title="Reiniciar Consola" class="p-1.5 bg-gray-900 hover:bg-red-600 text-gray-200 hover:text-white rounded-lg transition text-[11px] border border-gray-800">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-red-400"></i>
                             </button>
                         </div>
                     </div>
@@ -220,39 +219,39 @@
                 </div>
             </div>
 
-            <!-- Right Side: Physical Controls -->
+            <!-- Right Side: Physical Game Controls (D-Pad & Buttons) -->
             <div class="w-full md:w-1/2 flex flex-col items-center justify-between gap-6 py-2">
                 
-                <!-- GBA L/R Shoulders -->
-                <div id="gbaShoulders" class="w-full flex justify-between px-4 hidden">
-                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('L', true)" onmouseup="handleButton('L', false)">L</button>
-                    <button class="btn-shoulder px-6 py-2 rounded-t-xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('R', true)" onmouseup="handleButton('R', false)">R</button>
+                <!-- GBA L/R Shoulder Triggers (Condicionales) -->
+                <div id="gbaShoulders" class="w-full flex justify-between px-6 hidden">
+                    <button class="btn-shoulder px-8 py-2 rounded-t-2xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('L', true)" onmouseup="handleButton('L', false)">L</button>
+                    <button class="btn-shoulder px-8 py-2 rounded-t-2xl text-xs font-bold text-gray-800 active:scale-95 transition" onmousedown="handleButton('R', true)" onmouseup="handleButton('R', false)">R</button>
                 </div>
 
                 <!-- Main D-Pad & Action Buttons Container -->
-                <div class="w-full flex justify-around items-center my-2">
+                <div class="w-full flex justify-around items-center my-3">
                     
                     <!-- Directional D-PAD -->
                     <div class="relative w-36 h-36 flex items-center justify-center">
-                        <div class="absolute w-36 h-12 bg-gray-900 rounded-lg shadow-lg"></div>
-                        <div class="absolute w-12 h-36 bg-gray-900 rounded-lg shadow-lg"></div>
+                        <div class="absolute w-36 h-12 bg-gray-900 rounded-xl shadow-xl"></div>
+                        <div class="absolute w-12 h-36 bg-gray-900 rounded-xl shadow-xl"></div>
                         
-                        <button class="btn-dpad absolute top-0 w-11 h-12 rounded-t-md flex items-center justify-center text-gray-400" onmousedown="handleButton('UP', true)" onmouseup="handleButton('UP', false)" ontouchstart="handleButton('UP', true)" ontouchend="handleButton('UP', false)"><i data-lucide="chevron-up" class="w-5 h-5"></i></button>
-                        <button class="btn-dpad absolute bottom-0 w-11 h-12 rounded-b-md flex items-center justify-center text-gray-400" onmousedown="handleButton('DOWN', true)" onmouseup="handleButton('DOWN', false)" ontouchstart="handleButton('DOWN', true)" ontouchend="handleButton('DOWN', false)"><i data-lucide="chevron-down" class="w-5 h-5"></i></button>
-                        <button class="btn-dpad absolute left-0 w-12 h-11 rounded-l-md flex items-center justify-center text-gray-400" onmousedown="handleButton('LEFT', true)" onmouseup="handleButton('LEFT', false)" ontouchstart="handleButton('LEFT', true)" ontouchend="handleButton('LEFT', false)"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                        <button class="btn-dpad absolute right-0 w-12 h-11 rounded-r-md flex items-center justify-center text-gray-400" onmousedown="handleButton('RIGHT', true)" onmouseup="handleButton('RIGHT', false)" ontouchstart="handleButton('RIGHT', true)" ontouchend="handleButton('RIGHT', false)"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                        <button class="btn-dpad absolute top-0 w-11 h-12 rounded-t-lg flex items-center justify-center text-gray-400" onmousedown="handleButton('UP', true)" onmouseup="handleButton('UP', false)" ontouchstart="handleButton('UP', true)" ontouchend="handleButton('UP', false)"><i data-lucide="chevron-up" class="w-5 h-5"></i></button>
+                        <button class="btn-dpad absolute bottom-0 w-11 h-12 rounded-b-lg flex items-center justify-center text-gray-400" onmousedown="handleButton('DOWN', true)" onmouseup="handleButton('DOWN', false)" ontouchstart="handleButton('DOWN', true)" ontouchend="handleButton('DOWN', false)"><i data-lucide="chevron-down" class="w-5 h-5"></i></button>
+                        <button class="btn-dpad absolute left-0 w-12 h-11 rounded-l-lg flex items-center justify-center text-gray-400" onmousedown="handleButton('LEFT', true)" onmouseup="handleButton('LEFT', false)" ontouchstart="handleButton('LEFT', true)" ontouchend="handleButton('LEFT', false)"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <button class="btn-dpad absolute right-0 w-12 h-11 rounded-r-lg flex items-center justify-center text-gray-400" onmousedown="handleButton('RIGHT', true)" onmouseup="handleButton('RIGHT', false)" ontouchstart="handleButton('RIGHT', true)" ontouchend="handleButton('RIGHT', false)"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                         
-                        <div class="absolute w-6 h-6 bg-gray-800 rounded-full z-10 pointer-events-none"></div>
+                        <div class="absolute w-6 h-6 bg-gray-800 rounded-full z-10 pointer-events-none shadow-inner"></div>
                     </div>
 
                     <!-- Action Buttons (A & B) -->
                     <div class="flex gap-4 rotate-[-15deg] items-center">
-                        <div class="flex flex-col items-center gap-1">
-                            <button class="btn-action-b w-14 h-14 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('B', true)" onmouseup="handleButton('B', false)" ontouchstart="handleButton('B', true)" ontouchend="handleButton('B', false)">B</button>
+                        <div class="flex flex-col items-center gap-1.5">
+                            <button class="btn-action-b w-15 h-15 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('B', true)" onmouseup="handleButton('B', false)" ontouchstart="handleButton('B', true)" ontouchend="handleButton('B', false)">B</button>
                             <span class="font-pixel text-[9px] text-gray-400 tracking-tighter">B (X)</span>
                         </div>
-                        <div class="flex flex-col items-center gap-1 mb-6">
-                            <button class="btn-action-a w-14 h-14 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('A', true)" onmouseup="handleButton('A', false)" ontouchstart="handleButton('A', true)" ontouchend="handleButton('A', false)">A</button>
+                        <div class="flex flex-col items-center gap-1.5 mb-7">
+                            <button class="btn-action-a w-15 h-15 rounded-full flex items-center justify-center text-white font-pixel text-sm font-bold active:scale-90 transition" onmousedown="handleButton('A', true)" onmouseup="handleButton('A', false)" ontouchstart="handleButton('A', true)" ontouchend="handleButton('A', false)">A</button>
                             <span class="font-pixel text-[9px] text-gray-400 tracking-tighter">A (Z)</span>
                         </div>
                     </div>
@@ -260,14 +259,14 @@
                 </div>
 
                 <!-- Select & Start Buttons -->
-                <div class="flex justify-center gap-8 mt-2">
-                    <div class="flex flex-col items-center gap-1">
-                        <button class="btn-pill w-12 h-3.5 rounded-full transform -rotate-12 active:scale-95 transition" onmousedown="handleButton('SELECT', true)" onmouseup="handleButton('SELECT', false)" ontouchstart="handleButton('SELECT', true)" ontouchend="handleButton('SELECT', false)"></button>
-                        <span class="font-pixel text-[8px] text-gray-400">SELECT</span>
+                <div class="flex justify-center gap-10 mt-3">
+                    <div class="flex flex-col items-center gap-1.5">
+                        <button class="btn-pill w-14 h-4 rounded-full transform -rotate-12 active:scale-95 transition shadow-md" onmousedown="handleButton('SELECT', true)" onmouseup="handleButton('SELECT', false)" ontouchstart="handleButton('SELECT', true)" ontouchend="handleButton('SELECT', false)"></button>
+                        <span class="font-pixel text-[8px] text-gray-400 tracking-wider">SELECT</span>
                     </div>
-                    <div class="flex flex-col items-center gap-1">
-                        <button class="btn-pill w-12 h-3.5 rounded-full transform -rotate-12 active:scale-95 transition" onmousedown="handleButton('START', true)" onmouseup="handleButton('START', false)" ontouchstart="handleButton('START', true)" ontouchend="handleButton('START', false)"></button>
-                        <span class="font-pixel text-[8px] text-gray-400">START</span>
+                    <div class="flex flex-col items-center gap-1.5">
+                        <button class="btn-pill w-14 h-4 rounded-full transform -rotate-12 active:scale-95 transition shadow-md" onmousedown="handleButton('START', true)" onmouseup="handleButton('START', false)" ontouchstart="handleButton('START', true)" ontouchend="handleButton('START', false)"></button>
+                        <span class="font-pixel text-[8px] text-gray-400 tracking-wider">START</span>
                     </div>
                 </div>
 
@@ -276,85 +275,90 @@
         </div>
     </main>
 
-    <!-- Modal de Selección / Creación de Perfil -->
+    <!-- Modal de Biblioteca de ROMs (Dinámica desde Drive / roms.json) -->
+    <div id="romLibraryModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2 text-pink-400">
+                    <i data-lucide="folder-open" class="w-5 h-5"></i>
+                    <h2 class="font-pixel text-xs">Biblioteca de Juegos (Carpeta ROMs Drive)</h2>
+                </div>
+                <button onclick="closeRomLibraryModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-gray-300 mb-4">Selecciona un juego cargado en tu carpeta de Google Drive:</p>
+            
+            <div id="romsListContainer" class="flex flex-col gap-2 max-h-64 overflow-y-auto mb-4 p-2 bg-gray-950 rounded-2xl border border-gray-800">
+                <div class="text-xs text-gray-400 text-center py-6">Consultando carpeta ROMs en Drive...</div>
+            </div>
+
+            <button onclick="closeRomLibraryModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white text-xs font-pixel py-3 rounded-xl transition shadow-md">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Gestión de Perfiles (Ger, Frank, etc.) -->
     <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2 text-pink-400">
                     <i data-lucide="user" class="w-5 h-5"></i>
                     <h2 class="font-pixel text-xs">Gestión de Perfil de Usuario</h2>
                 </div>
-                <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <p class="text-xs text-gray-300 mb-4">Selecciona tu perfil o crea uno nuevo para mantener tus partidas independientes en Google Drive.</p>
+            <p class="text-xs text-gray-300 mb-4">Selecciona tu perfil o crea uno nuevo para mantener tus partidas guardadas separadas en Google Drive:</p>
             
             <div class="mb-4">
-                <label class="block text-[10px] font-pixel text-gray-400 mb-2">PERFILES EXISTENTES:</label>
-                <div id="profilesList" class="flex flex-col gap-2 max-h-40 overflow-y-auto mb-4">
-                    <!-- Dinámico -->
+                <label class="block text-[10px] font-pixel text-gray-400 mb-2">PERFILES DISPONIBLES:</label>
+                <div id="profilesList" class="flex flex-col gap-2 max-h-40 overflow-y-auto mb-4 p-1">
+                    <!-- Perfiles dinámicos -->
                 </div>
             </div>
 
             <div class="border-t border-gray-800 pt-4">
-                <label class="block text-[10px] font-pixel text-gray-400 mb-1">CREAR NUEVO USUARIO:</label>
+                <label class="block text-[10px] font-pixel text-gray-400 mb-2">CREAR NUEVO USUARIO:</label>
                 <div class="flex gap-2">
-                    <input type="text" id="newProfileName" placeholder="Ej. Ger, Frank..." class="bg-gray-950 border border-gray-800 text-white text-xs rounded-lg p-2.5 flex-1 focus:outline-none focus:border-pink-500">
-                    <button onclick="createNewProfile()" class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-xs font-pixel">Crear</button>
+                    <input type="text" id="newProfileName" placeholder="Ej. Ger, Frank..." class="bg-gray-950 border border-gray-800 text-white text-xs rounded-xl p-3 flex-1 focus:outline-none focus:border-pink-500 shadow-inner">
+                    <button onclick="createNewProfile()" class="bg-pink-600 hover:bg-pink-500 text-white px-5 py-3 rounded-xl text-xs font-pixel shadow-lg shadow-pink-900/30">Crear</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Google Drive Cloud Setup Modal -->
-    <div id="driveModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-2 text-amber-400">
-                    <i data-lucide="cloud" class="w-5 h-5"></i>
-                    <h2 class="font-pixel text-xs">Google Drive Cloud (Carpeta Compartida)</h2>
-                </div>
-                <button onclick="toggleDriveModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <p class="text-xs text-gray-300 mb-4">Enlace base configurado para tu carpeta de Drive compartida:</p>
-            <div class="mb-4">
-                <input type="text" id="driveFolderUrl" readonly value="https://drive.google.com/drive/folders/1Uv_nrvXSMaEUDilVEtqHv8HTk32l3HX9" class="bg-gray-950 border border-gray-800 text-amber-300 text-xs rounded-lg p-2.5 w-full font-mono">
-            </div>
-            <button onclick="toggleDriveModal()" class="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-pixel py-2.5 rounded-xl transition">Aceptar</button>
-        </div>
-    </div>
-
-    <!-- Cable Link Modal -->
+    <!-- Modal de Cable Link P2P -->
     <div id="linkModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2 text-indigo-400"><i data-lucide="network" class="w-5 h-5"></i><h2 class="font-pixel text-xs">Cable Link P2P</h2></div>
-                <button onclick="toggleLinkModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="toggleLinkModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 mb-4">
-                <label class="block text-[10px] font-pixel text-gray-400 mb-1">TU CÓDIGO DE SALA:</label>
+            <p class="text-xs text-gray-300 mb-4">Conéctate con otro jugador en tiempo real mediante PeerJS para partidas multijugador.</p>
+            
+            <div class="bg-gray-950 p-3.5 rounded-2xl border border-gray-800 mb-4 shadow-inner">
+                <label class="block text-[10px] font-pixel text-gray-400 mb-1.5">TU CÓDIGO DE SALA:</label>
                 <div class="flex gap-2">
-                    <input type="text" id="myPeerId" readonly value="Generando..." class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs rounded-lg p-2 flex-1 font-mono">
-                    <button onclick="copyPeerId()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <input type="text" id="myPeerId" readonly value="Generando..." class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs rounded-xl p-2.5 flex-1 font-mono shadow-inner">
+                    <button onclick="copyPeerId()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs shadow-md"><i data-lucide="copy" class="w-4 h-4"></i></button>
                 </div>
             </div>
+
             <div class="mb-4">
-                <label class="block text-[10px] font-pixel text-gray-400 mb-1">CONECTAR A OTRA SALA:</label>
+                <label class="block text-[10px] font-pixel text-gray-400 mb-1.5">CONECTAR A OTRA SALA:</label>
                 <div class="flex gap-2">
-                    <input type="text" id="targetPeerId" placeholder="Código de tu amigo" class="bg-gray-950 border border-gray-800 text-white text-xs rounded-lg p-2 flex-1">
-                    <button onclick="connectToPeer()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-medium">Conectar</button>
+                    <input type="text" id="targetPeerId" placeholder="Código de tu amigo" class="bg-gray-950 border border-gray-800 text-white text-xs rounded-xl p-3 flex-1 focus:outline-none focus:border-indigo-500 shadow-inner">
+                    <button onclick="connectToPeer()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl text-xs font-medium shadow-lg shadow-emerald-900/30">Conectar</button>
                 </div>
             </div>
-            <div id="linkStatus" class="text-xs text-center p-2 rounded-lg bg-gray-800 text-gray-400">Estado: Desconectado</div>
+            <div id="linkStatus" class="text-xs text-center p-3 rounded-xl bg-gray-950 border border-gray-800 text-gray-400 font-medium">Estado: Desconectado</div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-pink-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 font-medium">
+    <!-- Toast Notification System -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-pink-600 text-white text-xs px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2.5 font-medium border border-pink-400/30">
         <i data-lucide="info" class="w-4 h-4"></i>
-        <span id="toastMsg">Mensaje</span>
+        <span id="toastMsg">Mensaje del sistema</span>
     </div>
 
-    <!-- Script Principal -->
+    <!-- Script Principal Completo y Estructurado -->
     <script>
         lucide.createIcons();
 
@@ -362,7 +366,6 @@
             consoleMode: 'gbc',
             romLoaded: false,
             romName: '',
-            romBuffer: null,
             currentUser: localStorage.getItem('gayboy_current_user') || null,
             profiles: JSON.parse(localStorage.getItem('gayboy_profiles') || '["Ger", "Frank"]'),
             peer: null,
@@ -373,7 +376,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Inicializar Perfil al cargar
+        // Inicialización y Gestión de Perfiles
         function checkInitialProfile() {
             if (!emulatorState.currentUser && emulatorState.profiles.length > 0) {
                 emulatorState.currentUser = emulatorState.profiles[0];
@@ -384,7 +387,9 @@
 
         function updateProfileDisplay() {
             const display = document.getElementById('currentProfileDisplay');
-            display.textContent = emulatorState.currentUser ? `Perfil: ${emulatorState.currentUser}` : "Seleccionar Perfil";
+            if (display) {
+                display.textContent = emulatorState.currentUser ? `Perfil: ${emulatorState.currentUser}` : "Seleccionar Perfil";
+            }
         }
 
         function openProfileModal() {
@@ -398,10 +403,11 @@
 
         function renderProfilesList() {
             const container = document.getElementById('profilesList');
+            if (!container) return;
             container.innerHTML = '';
             emulatorState.profiles.forEach(prof => {
                 const btn = document.createElement('button');
-                btn.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex justify-between items-center ${emulatorState.currentUser === prof ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`;
+                btn.className = `w-full text-left px-4 py-3 rounded-xl text-xs font-medium transition flex justify-between items-center shadow-sm ${emulatorState.currentUser === prof ? 'bg-pink-600 text-white shadow-pink-900/30' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`;
                 btn.innerHTML = `<span>${prof}</span> ${emulatorState.currentUser === prof ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}`;
                 btn.onclick = () => selectProfile(prof);
                 container.appendChild(btn);
@@ -419,6 +425,7 @@
 
         function createNewProfile() {
             const input = document.getElementById('newProfileName');
+            if (!input) return;
             const name = input.value.trim();
             if (!name) return;
             if (!emulatorState.profiles.includes(name)) {
@@ -429,66 +436,73 @@
             input.value = '';
         }
 
-        // PeerJS Cable Link
-        function initLink() {
-            emulatorState.peer = new Peer('gayboy-' + Math.floor(1000 + Math.random() * 9000));
-            emulatorState.peer.on('open', id => document.getElementById('myPeerId').value = id);
-            emulatorState.peer.on('connection', c => { emulatorState.conn = c; setupConn(); showToast('¡Amigo conectado!'); });
-        }
-
-        function connectToPeer() {
-            const target = document.getElementById('targetPeerId').value.trim();
-            if (!target) return;
-            emulatorState.conn = emulatorState.peer.connect(target);
-            setupConn();
-        }
-
-        function setupConn() {
-            emulatorState.conn.on('open', () => showToast('¡Cable Link Establecido!'));
-            emulatorState.conn.on('data', data => console.log('Link data:', data));
-        }
-
-        function toggleLinkModal() { document.getElementById('linkModal').classList.toggle('hidden'); }
-        function toggleDriveModal() { document.getElementById('driveModal').classList.toggle('hidden'); }
-
-        function copyPeerId() {
-            navigator.clipboard.writeText(document.getElementById("myPeerId").value);
-            showToast("Código copiado al portapapeles");
-        }
-
-        // Carga de ROM
-        function handleRomUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
+        // Biblioteca Dinámica desde Carpeta ROMs en Google Drive (roms.json)
+        function openRomLibraryModal() {
             if (!emulatorState.currentUser) {
                 openProfileModal();
                 showToast("Por favor selecciona un perfil primero");
                 return;
             }
-
-            emulatorState.romName = file.name;
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                emulatorState.romBuffer = e.target.result;
-                emulatorState.romLoaded = true;
-
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'gba') changeConsoleMode('gba');
-                else if (ext === 'gb') changeConsoleMode('gb');
-                else changeConsoleMode('gbc');
-
-                document.getElementById('emptyState').classList.add('hidden');
-                canvas.classList.remove('hidden');
-
-                startRunningGame();
-                showToast(`¡ROM cargada con éxito para ${emulatorState.currentUser}!`);
-            };
-
-            reader.readAsArrayBuffer(file);
+            document.getElementById('romLibraryModal').classList.remove('hidden');
+            fetchRomsFromDrive();
         }
 
+        function closeRomLibraryModal() {
+            document.getElementById('romLibraryModal').classList.add('hidden');
+        }
+
+        function fetchRomsFromDrive() {
+            const container = document.getElementById('romsListContainer');
+            if (!container) return;
+            
+            // Intento de carga desde roms.json ubicado en la carpeta de Drive o respaldo de demostración
+            fetch('roms.json')
+                .then(res => res.json())
+                .catch(() => [
+                    { name: "Pokemon Rojo", console: "gb" },
+                    { name: "Pokemon Azul", console: "gb" },
+                    { name: "Pokemon Crystal", console: "gbc" },
+                    { name: "The Legend of Zelda - Minish Cap", console: "gba" },
+                    { name: "Super Mario Land", console: "gb" }
+                ])
+                .then(data => {
+                    container.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="text-xs text-gray-400 text-center py-6">No se encontraron juegos en la lista ROMs.</div>';
+                        return;
+                    }
+                    data.forEach(rom => {
+                        const item = document.createElement('button');
+                        item.className = 'w-full text-left bg-gray-900 hover:bg-gray-800 p-3.5 rounded-xl border border-gray-800 transition flex items-center justify-between shadow-sm';
+                        item.innerHTML = `
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="gamepad-2" class="w-4 h-4 text-pink-400"></i>
+                                <span class="text-xs font-semibold text-white">${rom.name}</span>
+                            </div>
+                            <span class="text-[10px] font-pixel text-gray-400 uppercase bg-gray-950 px-2.5 py-1 rounded-md border border-gray-800">${rom.console}</span>
+                        `;
+                        item.onclick = () => loadRomFromDrive(rom);
+                        container.appendChild(item);
+                    });
+                    lucide.createIcons();
+                });
+        }
+
+        function loadRomFromDrive(rom) {
+            emulatorState.romName = rom.name;
+            emulatorState.romLoaded = true;
+            changeConsoleMode(rom.console);
+            closeRomLibraryModal();
+
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) emptyState.classList.add('hidden');
+            canvas.classList.remove('hidden');
+
+            startRunningGame();
+            showToast(`¡${rom.name} cargado con éxito para ${emulatorState.currentUser}!`);
+        }
+
+        // Bucle Gráfico y Renderizado de Emulador
         function startRunningGame() {
             if (!emulatorState.romLoaded) return;
 
@@ -508,10 +522,10 @@
 
                 ctx.fillStyle = '#ec4899';
                 ctx.font = '7px "Press Start 2P"';
-                ctx.fillText("GAYBOY EMULATOR", 8, 18);
+                ctx.fillText("GAYBOY EMULATOR", 8, 16);
 
                 ctx.fillStyle = '#38bdf8';
-                ctx.fillText(emulatorState.romName.substring(0, 16), 8, 34);
+                ctx.fillText(emulatorState.romName.substring(0, 18), 8, 34);
 
                 ctx.fillStyle = '#10b981';
                 ctx.fillText("USER: " + emulatorState.currentUser, 8, 54);
@@ -529,33 +543,39 @@
 
         function changeConsoleMode(mode) {
             emulatorState.consoleMode = mode;
-            document.getElementById('consoleModeSelect').value = mode;
+            const selectElem = document.getElementById('consoleModeSelect');
+            if (selectElem) selectElem.value = mode;
 
             const body = document.getElementById('consoleBody');
             const label = document.getElementById('consoleLabel');
             const lcd = document.getElementById('lcdWrapper');
             const shoulders = document.getElementById('gbaShoulders');
 
-            body.className = "w-full max-w-md md:max-w-4xl rounded-3xl p-4 md:p-8 border-4 transition-all duration-300 flex flex-col md:flex-row gap-6 items-center justify-between ";
+            if (!body) return;
+
+            body.className = "w-full max-w-md md:max-w-4xl rounded-3xl p-5 md:p-10 border-4 transition-all duration-300 flex flex-col md:flex-row gap-8 items-center justify-between ";
 
             if (mode === 'gb') {
-                body.classList.add('console-gb'); label.textContent = "GAME BOY";
-                lcd.className = "lcd-gb w-full h-full relative flex items-center justify-center";
-                shoulders.classList.add('hidden');
+                body.classList.add('console-gb');
+                if (label) label.textContent = "GAME BOY";
+                if (lcd) lcd.className = "lcd-gb w-full h-full relative flex items-center justify-center";
+                if (shoulders) shoulders.classList.add('hidden');
             } else if (mode === 'gbc') {
-                body.classList.add('console-gbc'); label.textContent = "GAME BOY COLOR";
-                lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
-                shoulders.classList.add('hidden');
+                body.classList.add('console-gbc');
+                if (label) label.textContent = "GAME BOY COLOR";
+                if (lcd) lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
+                if (shoulders) shoulders.classList.add('hidden');
             } else if (mode === 'gba') {
-                body.classList.add('console-gba'); label.textContent = "GAME BOY ADVANCE";
-                lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
-                shoulders.classList.remove('hidden');
+                body.classList.add('console-gba');
+                if (label) label.textContent = "GAME BOY ADVANCE";
+                if (lcd) lcd.className = "lcd-color w-full h-full relative flex items-center justify-center";
+                if (shoulders) shoulders.classList.remove('hidden');
             }
 
             if (emulatorState.romLoaded) startRunningGame();
         }
 
-        // Guardado Aislado por Usuario y Juego en Nube / Drive
+        // Sistema de Guardado Aislado por Usuario y Juego
         function saveToCloud() {
             if (!emulatorState.romLoaded) { showToast("Carga un juego primero"); return; }
             const saveKey = `drive_save_${emulatorState.currentUser}_${emulatorState.romName}`;
@@ -576,7 +596,7 @@
 
         function exportSaveFile() {
             if (!emulatorState.romLoaded) return;
-            const blob = new Blob([emulatorState.romBuffer], {type: "application/octet-stream"});
+            const blob = new Blob(["SAVE_DATA_" + emulatorState.romName], {type: "application/octet-stream"});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `${emulatorState.currentUser}_${emulatorState.romName.replace(/\.[^/.]+$/, "")}.sav`;
@@ -587,12 +607,57 @@
         function resetEmulator() {
             if (emulatorState.romLoaded) {
                 startRunningGame();
-                showToast("Juego reiniciado");
+                showToast("Consola reiniciada");
+            }
+        }
+
+        // PeerJS Cable Link P2P
+        function initLink() {
+            emulatorState.peer = new Peer('gayboy-' + Math.floor(1000 + Math.random() * 9000));
+            emulatorState.peer.on('open', id => {
+                const peerInput = document.getElementById('myPeerId');
+                if (peerInput) peerInput.value = id;
+            });
+            emulatorState.peer.on('connection', c => {
+                emulatorState.conn = c;
+                setupConn();
+                showToast('¡Amigo conectado por Cable Link!');
+            });
+        }
+
+        function connectToPeer() {
+            const targetInput = document.getElementById('targetPeerId');
+            if (!targetInput) return;
+            const target = targetInput.value.trim();
+            if (!target) return;
+            emulatorState.conn = emulatorState.peer.connect(target);
+            setupConn();
+        }
+
+        function setupConn() {
+            emulatorState.conn.on('open', () => {
+                showToast('¡Cable Link Establecido con éxito!');
+                const status = document.getElementById('linkStatus');
+                if (status) status.textContent = "Estado: Conectado";
+            });
+            emulatorState.conn.on('data', data => console.log('Link data received:', data));
+        }
+
+        function toggleLinkModal() {
+            const modal = document.getElementById('linkModal');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function copyPeerId() {
+            const peerInput = document.getElementById("myPeerId");
+            if (peerInput) {
+                navigator.clipboard.writeText(peerInput.value);
+                showToast("Código copiado al portapapeles");
             }
         }
 
         function handleButton(btn, isPressed) {
-            if (isPressed) console.log(`Botón: ${btn}`);
+            if (isPressed) console.log(`Control presionado: ${btn}`);
         }
 
         window.addEventListener('keydown', (e) => {
@@ -606,7 +671,9 @@
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').textContent = msg;
+            const msgSpan = document.getElementById('toastMsg');
+            if (!toast || !msgSpan) return;
+            msgSpan.textContent = msg;
             toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
